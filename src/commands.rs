@@ -20,6 +20,7 @@ pub enum Command {
     Search,
     ClearFilters,
     FilterTag(usize),
+    SetDueDate,
     None,
 }
 
@@ -46,6 +47,7 @@ pub fn key_to_command(key: KeyCode) -> Command {
             let idx = (c as usize) - ('1' as usize);
             Command::FilterTag(idx)
         }
+        KeyCode::Char('M') | KeyCode::Char('m') | KeyCode::Char('ь') | KeyCode::Char('Ь') => Command::SetDueDate,
         _ => Command::None,
     }
 }

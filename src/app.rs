@@ -4,6 +4,7 @@ use crate::popup::popup;
 use crate::storage::Storage;
 use crate::todo::Todo;
 use crate::ui::{draw, draw_toosmall};
+use crate::todo::now_secs;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
@@ -14,6 +15,7 @@ use ratatui::Terminal;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 const MAX_TODOS: usize = 1024;
 const LANG_PREF_FILE: &str = "lang_pref.txt";
@@ -27,6 +29,31 @@ pub struct App {
     message: String,
     message_ttl: u8,
     celebrate: u8,
+}
+
+fn parse_datetime(date_str: &str, time_str: &str) -> Option<u64> {
+    let parts: Vec<&str> = date_str.split('-').collect();
+    if parts.len() != 3 {
+        return None;
+    }
+    let year = parts[0].parse::<i32>().ok()?;
+    let month = parts[1].parse::<u32>().ok()?;
+    let day = parts[2].parse::<u32>().ok()?;
+    let naive_date = NaiveDate::from_ymd_opt(year, month, day)?;
+    let (hour, minute) = if time_str.is_empty() {
+        (0, 0)
+    } else {
+        let time_parts: Vec<&str> = time_str.split(':').collect();
+        if time_parts.len() != 2 {
+            return None;
+        }
+        let h = time_parts[0].parse::<u32>().ok()?;
+        let m = time_parts[1].parse::<u32>().ok()?;
+        (h, m)
+    };
+    let naive_time = NaiveTime::from_hms_opt(hour, minute, 0)?;
+    let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
+    Some(naive_datetime.and_utc().timestamp() as u64)
 }
 
 impl App {
@@ -83,6 +110,20 @@ impl App {
             }
             if a.done != b.done {
                 return a.done.cmp(&b.done);
+            }
+            let now = now_secs();
+            let a_overdue = a.due_date > 0 && a.due_date < now;
+            let b_overdue = b.due_date > 0 && b.due_date < now;
+            if a_overdue != b_overdue {
+                return b_overdue.cmp(&a_overdue);
+            }
+            let a_has_due = a.due_date > 0;
+            let b_has_due = b.due_date > 0;
+            if a_has_due != b_has_due {
+                return b_has_due.cmp(&a_has_due);
+            }
+            if a_has_due && b_has_due {
+                return a.due_date.cmp(&b.due_date);
             }
             std::cmp::Ordering::Equal
         });
@@ -155,7 +196,7 @@ impl App {
         if !self.visible.is_empty() {
             let idx = self.visible[self.selected];
             let done = !self.storage.todos[idx].done;
-            let done_at = if done { crate::todo::now_secs() } else { 0 };
+            let done_at = if done { now_secs() } else { 0 };
             self.storage.todos[idx].done = done;
             self.storage.todos[idx].done_at = done_at;
             self.sort_todos();
@@ -272,8 +313,49 @@ impl App {
             }
             self.selected = 0;
             self.rebuild_visible();
-            let filter_msg = self.i18n.get("messages.filter_format").to_string().replace("{}", &self.storage.filter_tag);
-            self.set_message(&filter_msg);
+            // let filter_msg = self.i18n.get("messages.filter_format").to_string().replace("{}", &self.storage.filter_tag);
+            // self.set_message(&filter_msg);
+        }
+    }
+
+    fn cmd_set_due_date(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
+        if !self.visible.is_empty() {
+            let idx = self.visible[self.selected];
+            let date_title = self.i18n.get("popup_due_date_title").to_string();
+            let date_hint = self.i18n.get("popup_due_date_hint").to_string();
+            if let Ok(Some(date_str)) = popup(&date_title, &date_hint, "", term) {
+                let trimmed_date = date_str.trim();
+                if trimmed_date.is_empty() {
+                    self.storage.todos[idx].due_date = 0;
+                    let msg = self.i18n.get("due_date_cleared").to_string();
+                    self.set_message(&msg);
+                    self.sort_todos();
+                    self.storage.save();
+                    return;
+                }
+                let time_hint = self.i18n.get("popup_due_time_hint").to_string();
+                let time_res = popup("", &time_hint, "", term);
+                let time_str = match time_res {
+                    Ok(Some(t)) => t.trim().to_string(),
+                    Ok(None) => "".to_string(),
+                    Err(_) => "".to_string(),
+                };
+                if let Some(timestamp) = parse_datetime(trimmed_date, &time_str) {
+                    self.storage.todos[idx].due_date = timestamp;
+                    let display = if time_str.is_empty() {
+                        format!("{} {}", self.i18n.get("due_date_set"), trimmed_date)
+                    } else {
+                        format!("{} {} {}", self.i18n.get("due_date_set"), trimmed_date, time_str)
+                    };
+                    self.set_message(&display);
+                } else {
+                    let msg = self.i18n.get("due_date_invalid").to_string();
+                    self.set_message(&msg);
+                    return;
+                }
+                self.sort_todos();
+                self.storage.save();
+            }
         }
     }
 
@@ -297,6 +379,7 @@ impl App {
             Command::Search => self.cmd_search(term),
             Command::ClearFilters => self.cmd_clear_filters(),
             Command::FilterTag(idx) => self.cmd_filter_tag(idx),
+            Command::SetDueDate => self.cmd_set_due_date(term),
             Command::None => {}
         }
         true

@@ -2,6 +2,7 @@ use super::common::{color, tag_color, truncate_text};
 use crate::i18n::I18n;
 use crate::storage::Storage;
 use super::progress_bar::draw_progress_bar;
+use crate::todo::now_secs;
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style, Stylize},
@@ -151,6 +152,20 @@ pub fn draw_todo_list(
                 Style::default().fg(tag_c).add_modifier(Modifier::BOLD)
             };
             spans.push(Span::styled(format!("#{} ", todo.tag), tag_style));
+        }
+
+        if !todo.done && todo.due_date > 0 {
+            let now = now_secs();
+            let overdue = todo.due_date < now;
+            let due_symbol = if overdue { "‼ " } else { "~~ " };
+            let due_style = if is_selected {
+                base_style
+            } else if overdue {
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)
+            };
+            spans.push(Span::styled(due_symbol, due_style));
         }
 
         let used_width: usize = spans.iter().map(|s| s.content.len()).sum();

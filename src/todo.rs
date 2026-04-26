@@ -15,6 +15,7 @@ pub struct Todo {
     pub text: String,
     pub created_at: u64,
     pub done_at: u64,
+    pub due_date: u64,
 }
 
 impl Todo {
@@ -26,18 +27,20 @@ impl Todo {
             text: text.to_string(),
             created_at: now_secs(),
             done_at: 0,
+            due_date: 0,
         }
     }
 
     pub fn to_line(&self) -> String {
         format!(
-            "{}|{}|{}|{}|{}|{}\n",
+            "{}|{}|{}|{}|{}|{}|{}\n",
             if self.pinned { 'P' } else { '-' },
             if self.done { 'x' } else { ' ' },
             if self.tag.is_empty() { "none" } else { &self.tag },
             self.text,
             self.created_at,
-            self.done_at
+            self.done_at,
+            self.due_date
         )
     }
 
@@ -56,6 +59,11 @@ impl Todo {
         let text = parts[3].to_string();
         let created_at = parts[4].parse().unwrap_or(0);
         let done_at = parts[5].parse().unwrap_or(0);
+        let due_date = if parts.len() >= 7 {
+            parts[6].parse().unwrap_or(0)
+        } else {
+            0
+        };
         Some(Self {
             done,
             pinned,
@@ -63,6 +71,7 @@ impl Todo {
             text,
             created_at,
             done_at,
+            due_date,
         })
     }
 }

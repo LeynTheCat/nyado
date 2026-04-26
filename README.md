@@ -76,7 +76,7 @@ Just run nyado from your terminal.
 Action              | Keys (English / Russian)
 --------------------|-----------------------------------------
 Quit                | q / й
-Language switch     | l / L / л
+Language switch     | l / L / л / Л
 Navigate down       | j / о , ↓
 Navigate up         | k / к , ↑
 Top / Bottom        | g / г , G / Г (or Home / End)
@@ -91,6 +91,7 @@ Delete all tasks    | D / В (Shift + letter)
 Search              | / / .
 Filter by tag (1‑9) | 1…9 (only for existing tags)
 Clear filters       | Esc
+Set due date/time   | M / m / ь / Ь
 
 Note: Filtering works for the first nine most‑used tags displayed in the right panel.
 Press 1‑9 to filter by that tag, press Esc to clear the filter and the search query.

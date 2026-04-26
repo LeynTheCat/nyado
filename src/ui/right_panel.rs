@@ -4,11 +4,12 @@ use crate::storage::Storage;
 use super::bongo::draw_bongo;
 use ratatui::{
     layout::Rect,
-    style::{Modifier, Style, Stylize},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use crate::todo::now_secs;
 
 pub fn draw_right_panel(frame: &mut Frame, area: Rect, storage: &Storage, visible: &[usize], selected: usize, i18n: &I18n) {
     let block = Block::default()
@@ -135,6 +136,18 @@ pub fn draw_right_panel(frame: &mut Frame, area: Rect, storage: &Storage, visibl
                 .map(|dt| dt.format("%d %b %H:%M").to_string())
                 .unwrap();
             lines.push(Line::from(vec![Span::raw(i18n.get("done_prefix")), Span::styled(done_at, Style::default().dim().add_modifier(Modifier::BOLD))]));
+        }
+        if todo.due_date > 0 {
+            let now = now_secs();
+            let dt = chrono::DateTime::from_timestamp(todo.due_date as i64, 0);
+            let due_str = dt.map(|dt| dt.format("%d %b %H:%M").to_string()).unwrap_or_else(|| "?? ??? ??:??".to_string());
+            let overdue = todo.due_date < now;
+            let style = if overdue {
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)
+            };
+            lines.push(Line::from(vec![Span::styled("> ", style), Span::styled(due_str, style)]));
         }
         let details_area = Rect::new(inner.left() + 2, y, inner.width - 4, inner.bottom() - y - 2);
         if details_area.width > 0 && details_area.height > 0 {
