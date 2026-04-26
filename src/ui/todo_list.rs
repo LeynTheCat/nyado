@@ -62,15 +62,39 @@ pub fn draw_todo_list(
     }
 
     let total_items = visible.len();
-    if total_items > 0 {
-        if selected < *scroll_state {
-            *scroll_state = selected;
-        } else if selected >= *scroll_state + list_height {
-            *scroll_state = selected.saturating_sub(list_height - 1);
+    if total_items == 0 {
+        let msg1 = i18n.get("empty_list_line1");
+        let msg2 = i18n.get("empty_list_line2");
+        let msg1_len = msg1.chars().count() as u16;
+        let msg2_len = msg2.chars().count() as u16;
+
+        // Вычисляем центр области списка
+        let center_y = list_start_y + (list_height / 2) as u16;
+        let y1 = center_y.saturating_sub(1); // первая строка на одну выше центра
+        let y2 = y1 + 1;                   // вторая строка
+
+        if msg1_len + 2 <= inner.width && y1 < inner.bottom() - 1 {
+            frame.render_widget(
+                Paragraph::new(Span::styled(msg1, Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD))),
+                Rect::new(inner.left() + 2, y1, msg1_len, 1),
+            );
         }
-        if *scroll_state + list_height > total_items {
-            *scroll_state = total_items.saturating_sub(list_height);
+        if msg2_len + 2 <= inner.width && y2 < inner.bottom() - 1 {
+            frame.render_widget(
+                Paragraph::new(Span::styled(msg2, Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD))),
+                Rect::new(inner.left() + 2, y2, msg2_len, 1),
+            );
         }
+        return;
+    }
+
+    if selected < *scroll_state {
+        *scroll_state = selected;
+    } else if selected >= *scroll_state + list_height {
+        *scroll_state = selected.saturating_sub(list_height - 1);
+    }
+    if *scroll_state + list_height > total_items {
+        *scroll_state = total_items.saturating_sub(list_height);
     }
 
     if *scroll_state > 0 {

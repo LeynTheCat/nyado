@@ -69,6 +69,8 @@ struct Localization {
     celebration_line4: String,
     celebration_line5: String,
     celebration_line6: String,
+    empty_list_line1: String,
+    empty_list_line2: String,
 }
 
 pub struct I18n {
@@ -180,6 +182,8 @@ impl I18n {
             "celebration_line4" => return &loc.celebration_line4,
             "celebration_line5" => return &loc.celebration_line5,
             "celebration_line6" => return &loc.celebration_line6,
+            "empty_list_line1" => return &loc.empty_list_line1,
+            "empty_list_line2" => return &loc.empty_list_line2,
             _ => {}
         }
         if let Some(stripped) = key.strip_prefix("messages.") {
