@@ -5,35 +5,31 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
-    name: Build and Release
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: x86_64-unknown-linux-gnu
+          profile: minimal
           override: true
 
-      - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build release binary (x86_64)
+        run: cargo build --release --target x86_64-unknown-linux-gnu
 
-      - name: Rename binary (optional)
-        run: |
-          mv target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
-
-      - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v1
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          files: nyado-*
+          files: target/x86_64-unknown-linux-gnu/release/nyado
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
