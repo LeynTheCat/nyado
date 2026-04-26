@@ -68,10 +68,9 @@ pub fn draw_todo_list(
         let msg1_len = msg1.chars().count() as u16;
         let msg2_len = msg2.chars().count() as u16;
 
-        // Вычисляем центр области списка
         let center_y = list_start_y + (list_height / 2) as u16;
-        let y1 = center_y.saturating_sub(1); // первая строка на одну выше центра
-        let y2 = y1 + 1;                   // вторая строка
+        let y1 = center_y.saturating_sub(1);
+        let y2 = y1 + 1;
 
         if msg1_len + 2 <= inner.width && y1 < inner.bottom() - 1 {
             frame.render_widget(
