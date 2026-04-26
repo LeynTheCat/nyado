@@ -8,11 +8,8 @@ NC='\033[0m'
 print_green() { echo -e "${GREEN}$1${NC}"; }
 print_yellow() { echo -e "${YELLOW}$1${NC}"; }
 
-ARCH=$(uname -m)
-OS=$(uname -s)
-
-if [ "$OS" != "Linux" ]; then
-    print_yellow "Warning: This script is designed for Linux. Your OS: $OS"
+if [ "$(uname -s)" != "Linux" ]; then
+    print_yellow "Warning: This script is designed for Linux. Your OS: $(uname -s)"
 fi
 
 if ! command -v curl &> /dev/null; then
@@ -40,8 +37,11 @@ print_green "Installing to ~/.local/bin/"
 mkdir -p "$HOME/.local/bin"
 mv nyado "$HOME/.local/bin/"
 
-print_green "Installing config files to ~/.config/nyado/"
+print_green "Removing old config files from ~/.config/nyado/"
+rm -rf "$HOME/.config/nyado"
 mkdir -p "$HOME/.config/nyado"
+
+print_green "Installing fresh config files to ~/.config/nyado/"
 cp config/*.toml "$HOME/.config/nyado/"
 
 print_green "Nyado installed successfully."
