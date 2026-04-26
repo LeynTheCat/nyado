@@ -6,6 +6,8 @@
 nyado is a terminal-based task manager inspired by meowdo.
 It supports multiple languages, tags, search, pinning.
 
+![nyado preview](img/preview.png)
+
 ## Installation
 
 Choose one of the following methods:
@@ -47,8 +49,23 @@ cp config/*.toml ~/.config/nyado/
 
 ## Update
 
-- Binary version – simply run ./install_bin.sh again (it will overwrite the old binary and configs).
-- Source version – cd into the repository and run ./install.sh update.
+- Binary version (if you used install_bin.sh): simply run ./install_bin.sh again – it will download the latest binary and update config files.
+
+- Source version (if you built from source): cd into the cloned directory and run ./install.sh update. This will pull the latest changes, rebuild, and reinstall.
+
+## Uninstall
+
+To completely remove nyado:
+
+~~~
+./install.sh uninstall
+~~~
+
+This deletes the binary from ~/.local/bin/ and the config directory ~/.config/nyado/. Your tasks data is stored separately in ~/.local/share/nyado/ – if you want to remove that too, delete it manually:
+
+~~~
+rm -rf ~/.local/share/nyado
+~~~
 
 ## Usage
 

@@ -37,6 +37,15 @@ print_green "Installing to ~/.local/bin/"
 mkdir -p "$HOME/.local/bin"
 mv nyado "$HOME/.local/bin/"
 
+if [ ! -d "config" ]; then
+    print_yellow "config folder not found. Fetching it from GitHub..."
+    TMP_DIR=$(mktemp -d)
+    git clone --depth=1 "https://github.com/$REPO.git" "$TMP_DIR"
+    cp -r "$TMP_DIR/config" .
+    rm -rf "$TMP_DIR"
+    print_green "Config files downloaded."
+fi
+
 print_green "Removing old config files from ~/.config/nyado/"
 rm -rf "$HOME/.config/nyado"
 mkdir -p "$HOME/.config/nyado"

@@ -48,6 +48,18 @@ install_rust() {
     fi
 }
 
+ensure_config() {
+    if [ ! -d "config" ]; then
+        print_warn "config folder not found. Fetching from GitHub..."
+        REPO="LeynTheCat/nyado"
+        TMP_DIR=$(mktemp -d)
+        git clone --depth=1 "https://github.com/$REPO.git" "$TMP_DIR"
+        cp -r "$TMP_DIR/config" .
+        rm -rf "$TMP_DIR"
+        print_green "Config files downloaded."
+    fi
+}
+
 build() {
     print_info "Building nyado in release mode..."
     cargo build --release
@@ -91,6 +103,7 @@ case "$1" in
     update) update ;;
     uninstall) uninstall ;;
     install|""|*) 
+        ensure_config
         if ! check_rust; then
             install_rust
         fi
