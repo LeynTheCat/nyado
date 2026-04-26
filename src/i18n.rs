@@ -1,7 +1,22 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+fn get_config_dir() -> PathBuf {
+    if let Some(mut dir) = dirs::config_dir() {
+        dir.push("nyado");
+        if dir.exists() && dir.is_dir() {
+            return dir;
+        }
+    }
+    if Path::new("config").exists() && Path::new("config").is_dir() {
+        return PathBuf::from("config");
+    }
+    let mut fallback = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
+    fallback.push("nyado");
+    fallback
+}
 
 #[derive(Debug, Deserialize)]
 struct Localization {
@@ -63,9 +78,9 @@ pub struct I18n {
 
 impl I18n {
     pub fn new() -> anyhow::Result<Self> {
-        let config_dir = Path::new("config");
+        let config_dir = get_config_dir();
         let mut languages = Vec::new();
-        for entry in fs::read_dir(config_dir)? {
+        for entry in fs::read_dir(&config_dir)? {
             let entry = entry?;
             let path = entry.path();
             if path.is_file() && path.file_name().and_then(|n| n.to_str()).map_or(false, |name| name.starts_with("lang_") && name.ends_with(".toml")) {
@@ -77,7 +92,7 @@ impl I18n {
             }
         }
         if languages.is_empty() {
-            anyhow::bail!("No language files found in config/ directory");
+            anyhow::bail!("No language files found in config/ directory (searched in {:?})", config_dir);
         }
         languages.sort_by(|(code_a, _), (code_b, _)| {
             if code_a == "en" {
