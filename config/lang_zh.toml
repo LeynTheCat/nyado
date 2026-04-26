@@ -1,0 +1,91 @@
+celebration_line1 = "  =^..^=  =^..^=  =^..^=  "
+celebration_line2 = ""
+celebration_line3 = "   *  所有任务都已完成！！  *  "
+celebration_line4 = "    完美的！！喵喵～    "
+celebration_line5 = ""
+celebration_line6 = "  =^..^=  =^..^=  =^..^=  "
+
+created_prefix = "+ "
+done_prefix = "v "
+pinned_marker = "* 已固定"
+selected_header = " 已选择 "
+tags_header = " 标签 (1-9) "
+stats_header = " 统计信息 "
+
+mood_all_done = " 完美的！全做完啦～ "
+mood_empty = " 添加个任务吧 喵～ "
+mood_one = " 还差一个！你可以的！ "
+mood_few = " 快好了，喵～ "
+mood_several = " *喵喵！你太高效了 喵～* "
+mood_many = " !! 太多任务了，嘶！ "
+
+popup_new_title = "新任务"
+popup_new_hint = "需要做什么？"
+popup_edit_title = "编辑任务"
+popup_edit_hint = "编辑内容（Esc 取消）"
+popup_set_tag_title = "设置标签"
+popup_set_tag_hint_existing = "已有："
+popup_set_tag_hint_empty = "输入标签（留空=清除）"
+popup_delete_confirm = "删除 “{}” ？ y/N"
+popup_delete_all_confirm = "删除全部 {} 个任务？ y/N"
+popup_delete_all_warning = "!! 此操作不可撤销 !! "
+popup_search_title = "搜索"
+popup_search_hint = "输入过滤文字～"
+
+statusbar_hint_wide = " n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删除  /:搜索  0-6:过滤  Esc:清除  q:退出"
+statusbar_hint_medium = " n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:搜索  q:退出"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  q"
+
+progress_label = " {} 剩余 "
+column_header = "  [/] #标签        任务 "
+scroll_up = "(^)"
+scroll_down = "(v)"
+topbar_title = " =^..^=  nyado "
+topbar_filter_prefix = "#"
+topbar_search_prefix = "/"
+topbar_date_format = "%H:%M  %a %d %b"
+title = " 任务 "
+right_title = " 喵铛 "
+
+[ui]
+title = " 任务 "
+right_title = " 喵铛 "
+topbar_title = " =^..^=  nyado "
+topbar_filter_prefix = "#"
+topbar_search_prefix = "/"
+topbar_date_format = "%H:%M  %a %d %b"
+statusbar_hint_wide = " n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删除  /:搜索  0-6:过滤  Esc:清除  q:退出  l:语言"
+statusbar_hint_medium = " n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:搜索  q:退出  l"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  q  l"
+progress_label = " {} 剩余 "
+column_header = "  [/] #标签        任务 "
+scroll_up = "(^)"
+scroll_down = "(v)"
+
+[pending]
+prefix = " * 待办 : "
+
+[done]
+prefix = " x 完成 : "
+
+[pinned]
+prefix = " ^ 固定 : "
+
+[total]
+prefix = " # 总计 : "
+
+[messages]
+task_added = "任务添加成功！ 喵～"
+task_updated = "任务已更新！ 喵～"
+done = "完成！干得好 :3"
+undone = "恢复待办～"
+pinned = "已固定！ *"
+unpinned = "已解除固定～"
+tag_set = "标签已设置！"
+tag_cleared = "标签已清除"
+deleted = "已删除！噗～"
+all_deleted = "一片空白！全新开始 喵～"
+filters_cleared = "已清除筛选～"
+showing_all = "显示全部任务"
+filter_format = "筛选：#{}"
+all_done = "全部完成！！喵喵！！ =^..^="

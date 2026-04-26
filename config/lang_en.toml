@@ -1,0 +1,91 @@
+celebration_line1 = "  =^..^=  =^..^=  =^..^=  "
+celebration_line2 = ""
+celebration_line3 = "   *  ALL TASKS DONE!!  *  "
+celebration_line4 = "    purrfect!! nya nya~    "
+celebration_line5 = ""
+celebration_line6 = "  =^..^=  =^..^=  =^..^=  "
+
+created_prefix = "+ "
+done_prefix = "v "
+pinned_marker = "* pinned"
+selected_header = " SELECTED "
+tags_header = " TAGS (1-9) "
+stats_header = " STATS "
+
+mood_all_done = " purrfect!! all done~ "
+mood_empty = " add a task nya~ "
+mood_one = " one more! you got it! "
+mood_few = " almost there, meow~ "
+mood_several = " *meow meow! you productive nya~* "
+mood_many = " !!so many tasks hiss! "
+
+popup_new_title = "New task"
+popup_new_hint = "what needs doing?"
+popup_edit_title = "Edit task"
+popup_edit_hint = "edit text (Esc=cancel)"
+popup_set_tag_title = "Set tag"
+popup_set_tag_hint_existing = "existing: "
+popup_set_tag_hint_empty = "enter tag (blank=clear)"
+popup_delete_confirm = "delete \"{}\"? y/N"
+popup_delete_all_confirm = "delete ALL {} tasks? y/N"
+popup_delete_all_warning = "!! THIS CANNOT BE UNDONE !! "
+popup_search_title = "Search"
+popup_search_hint = "type to filter~"
+
+statusbar_hint_wide = " n:new  e:edit  Spc:done  p:pin  t:tag  d:del  D:del-all  /:search  0-6:filter  Esc:clear  q:quit"
+statusbar_hint_medium = " n:new  e:edit  Spc:done  d:del  D:all  /:search  q:quit"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  q"
+
+progress_label = " {} left "
+column_header = "  [/] #tag        task"
+scroll_up = "(^)"
+scroll_down = "(v)"
+topbar_title = " =^..^=  nyado "
+topbar_filter_prefix = "#"
+topbar_search_prefix = "/"
+topbar_date_format = "%H:%M  %a %d %b"
+title = " TODO "
+right_title = " NYADO "
+
+[ui]
+title = " TODO "
+right_title = " NYADO "
+topbar_title = " =^..^=  nyado "
+topbar_filter_prefix = "#"
+topbar_search_prefix = "/"
+topbar_date_format = "%H:%M  %a %d %b"
+statusbar_hint_wide = " n:new  e:edit  Spc:done  p:pin  t:tag  d:del  D:del-all  /:search  0-6:filter  Esc:clear  q:quit  l:lang"
+statusbar_hint_medium = " n:new  e:edit  Spc:done  d:del  D:all  /:search  q:quit  l"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  q  l"
+progress_label = " {} left "
+column_header = "  [/] #tag        task"
+scroll_up = "(^)"
+scroll_down = "(v)"
+
+[pending]
+prefix = " * pending : "
+
+[done]
+prefix = " x done    : "
+
+[pinned]
+prefix = " ^ pinned  : "
+
+[total]
+prefix = " # total   : "
+
+[messages]
+task_added = "task added! nya~"
+task_updated = "task updated! nya~"
+done = "done! good job :3"
+undone = "back to pending~"
+pinned = "pinned! *"
+unpinned = "unpinned~"
+tag_set = "tag set!"
+tag_cleared = "tag cleared"
+deleted = "deleted! poof~"
+all_deleted = "clean slate! fresh start nya~"
+filters_cleared = "filters cleared~"
+showing_all = "showing all tasks"
+filter_format = "filter: #{}"
+all_done = "ALL DONE!! purrfect!! =^..^="

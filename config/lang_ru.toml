@@ -1,0 +1,92 @@
+celebration_line1 = "  =^..^=  =^..^=  =^..^=  "
+celebration_line2 = ""
+celebration_line3 = "   *  ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ!!  *  "
+celebration_line4 = "    purrfect!! ня ня~    "
+celebration_line5 = ""
+celebration_line6 = "  =^..^=  =^..^=  =^..^=  "
+
+created_prefix = "+ "
+done_prefix = "v "
+pinned_marker = "* закреплено"
+selected_header = " ВЫБРАНО "
+tags_header = " ТЕГИ (1-9) "
+stats_header = " СТАТИСТИКА "
+
+mood_all_done = " всё сделано! мур~ "
+mood_empty = " добавь задачу мяу~ "
+mood_one = " ещё одна! ты справишься! "
+mood_few = " почти готово, мяу~ "
+mood_several = " *мяу мяу! ты продуктивен ня~* "
+mood_many = " !!столько дел... фыр! "
+
+popup_new_title = "Новая задача"
+popup_new_hint = "что нужно сделать?"
+popup_edit_title = "Редактировать"
+popup_edit_hint = "новый текст (Esc=отмена)"
+popup_set_tag_title = "Установить тег"
+popup_set_tag_hint_existing = "существующие: "
+popup_set_tag_hint_empty = "введи тег (пусто=сброс)"
+popup_delete_confirm = "удалить \"{}\"? y/N"
+popup_delete_all_confirm = "удалить ВСЕ {} задач? y/N"
+popup_delete_all_warning = "!! ЭТО НЕЛЬЗЯ ОТМЕНИТЬ !! "
+popup_search_title = "Поиск"
+popup_search_hint = "введи текст для фильтрации~"
+
+statusbar_hint_wide = " n(т):нов  e(у):прав  Spc:вып  p(з):закр  t(е):тег  d(в):уд  D(В):удвсе  /(.):поиск  0-6:фильтр  Esc:сброс  q(й):выход  l(л):язык"
+statusbar_hint_medium = " n(т):нов  e(у):прав  Spc:вып  d(в):уд  D(В):все  /(.):поиск  q(й):выход  l(л)"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  q  l"
+
+progress_label = " {} осталось "
+column_header = "  [/] #тег        задача"
+scroll_up = "(^)"
+scroll_down = "(v)"
+topbar_title = " =^..^=  нядо "
+topbar_filter_prefix = "#"
+topbar_search_prefix = "/"
+topbar_date_format = "%H:%M  %a %d %b"
+title = " ЗАДАЧИ "
+right_title = " НЯДО "
+
+[ui]
+title = " ЗАДАЧИ "
+right_title = " НЯДО "
+topbar_title = " =^..^=  нядо "
+topbar_filter_prefix = "#"
+topbar_search_prefix = "/"
+topbar_date_format = "%H:%M  %a %d %b"
+statusbar_hint_wide = " n(т):нов  e(у):прав  Spc:вып  p(з):закр  t(е):тег  d(в):уд  D(В):удвсе  /(.):поиск  0-6:фильтр  Esc:сброс  q(й):выход"
+statusbar_hint_medium = " n(т):нов  e(у):прав  Spc:вып  d(в):уд  D(В):все  /(.):поиск  q(й):выход"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  q"
+progress_label = " {} осталось "
+column_header = "  [/] #тег        задача"
+scroll_up = "(^)"
+scroll_down = "(v)"
+
+[pending]
+prefix = " * осталось : "
+
+[done]
+prefix = " x выполнено: "
+
+[pinned]
+prefix = " ^ закреплено: "
+
+[total]
+prefix = " # всего   : "
+
+[messages]
+task_added = "задача добавлена! ня~"
+task_updated = "задача обновлена! ня~"
+done = "готово! молодец :3"
+undone = "снова в ожидании~"
+pinned = "закреплено! *"
+unpinned = "откреплено~"
+tag_set = "тег установлен!"
+tag_cleared = "тег сброшен"
+deleted = "удалено! пуф~"
+all_deleted = "чистый лист! новый старт ня~"
+filters_cleared = "фильтры сброшены~"
+showing_all = "показываем все задачи"
+filter_format = "фильтр: #{}"
+all_done = "ВСЁ СДЕЛАНО!! муррр!! =^..^="
+

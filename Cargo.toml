@@ -1,0 +1,20 @@
+[package]
+name = "nyado"
+version = "0.1.0"
+edition = "2024"
+authors = ["InTeaReable - leyn.the.cat@gmail.com"]
+description = "A Rust todo-list manager with TUI, inspired by meowdo"
+license = "MIT"
+repository = "https://github.com/LeynTheCat/nyado"
+readme = "README.md"
+keywords = ["todo", "tui", "rust", "productivity", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+ratatui = "0.26"
+crossterm = "0.27"
+dirs = "5"
+chrono = "0.4"
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
