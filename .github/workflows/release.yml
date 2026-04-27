@@ -12,24 +12,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install musl tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: x86_64-unknown-linux-gnu
+          target: x86_64-unknown-linux-musl
           profile: minimal
           override: true
 
-      - name: Build release binary (x86_64)
-        run: cargo build --release --target x86_64-unknown-linux-gnu
+      - name: Build static binary
+        run: cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/x86_64-unknown-linux-gnu/release/nyado
+          files: target/x86_64-unknown-linux-musl/release/nyado
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
