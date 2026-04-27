@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
 nyado is a terminal-based task manager inspired by meowdo.
-It supports multiple languages, tags, search, pinning.
+It supports multiple languages, tags, search, pinning, due dates.
 
 ![nyado preview](img/preview.png)
 
@@ -14,44 +14,49 @@ Choose one of the following methods:
 
 ### 1. Quick install (binary, no compilation)
 
-```
-git clone https://github.com/LeynTheCat/nyado.git
-cd nyado
-chmod +x install_bin.sh
-./install_bin.sh
-```
+~~~
+curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install_bin.sh | bash
+~~~
 
 This script:
-- Downloads the latest pre‑built Linux x86_64 binary from GitHub Releases
+- Detects your CPU architecture (x86_64 or aarch64)
+- Downloads the latest pre‑built static binary from GitHub Releases
 - Installs it to ~/.local/bin/
-- Copies language files to ~/.config/nyado/ (removes old configs first)
+- Fetches and installs language files to ~/.config/nyado/ (replaces old configs)
 
 ### 2. Build from source (requires Rust)
 
-```
-git clone https://github.com/LeynTheCat/nyado.git
-cd nyado
-./install.sh
-```
+~~~
+curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install.sh | bash
+~~~
 
 The script will:
+- Download the latest source code from GitHub
 - Install Rust/Cargo automatically (Arch, Debian/Ubuntu, Fedora, openSUSE, or rustup)
 - Build nyado in release mode
 - Install binary and config files
 
-### 3. Manual installation
+### 3. Manual installation (git clone)
 
-```
+~~~
+git clone https://github.com/LeynTheCat/nyado.git
+cd nyado
+./install.sh
+~~~
+
+or without cloning:
+
+~~~
 cargo install --git https://github.com/LeynTheCat/nyado.git
 mkdir -p ~/.config/nyado
 cp config/*.toml ~/.config/nyado/
-```
+~~~
 
 ## Update
 
-- Binary version (if you used install_bin.sh): simply run ./install_bin.sh again – it will download the latest binary and update config files.
-
-- Source version (if you built from source): cd into the cloned directory and run ./install.sh update. This will pull the latest changes, rebuild, and reinstall.
+- **Binary installation**: simply run the same quick install command again – it will download the latest binary and update config files.
+- **Source installation (from git)**: cd into the cloned directory and run `./install.sh update`.
+- **If you used the one‑line curl installer**: just run the same command again – it will overwrite the binary and configs.
 
 ## Uninstall
 
@@ -61,7 +66,8 @@ To completely remove nyado:
 ./install.sh uninstall
 ~~~
 
-This deletes the binary from ~/.local/bin/ and the config directory ~/.config/nyado/. Your tasks data is stored separately in ~/.local/share/nyado/ – if you want to remove that too, delete it manually:
+This deletes the binary from ~/.local/bin/ and the config directory ~/.config/nyado/.
+Your tasks data is stored separately in ~/.local/share/nyado/ – if you want to remove that too, delete it manually:
 
 ~~~
 rm -rf ~/.local/share/nyado
@@ -69,7 +75,7 @@ rm -rf ~/.local/share/nyado
 
 ## Usage
 
-Just run nyado from your terminal.
+Just run `nyado` from your terminal.
 
 ### Key bindings
 
@@ -100,7 +106,7 @@ Press 1‑9 to filter by that tag, press Esc to clear the filter and the search 
 
 - Language files are stored in ~/.config/nyado/lang_*.toml (e.g., lang_en.toml, lang_ru.toml).
 - You can add your own language by placing a lang_xx.toml file there (just copy an existing one and translate).
-- The default language order is English, Russian, Chinese (determined by file names).
+- The default language order is English, Russian, Chinese, Japanese, Spanish (determined by file names).
 
 ## Data storage
 
@@ -109,7 +115,7 @@ You can back it up or edit manually (but be careful).
 
 ## Requirements
 
-- Linux (x86_64) – any distribution with a decent terminal (unicode support).
+- Linux (x86_64 or aarch64) – any distribution with a decent terminal (unicode support).
 - For the binary installer: curl.
 - For the source installer: Rust toolchain (installed automatically if missing).
 

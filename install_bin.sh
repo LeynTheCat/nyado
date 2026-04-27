@@ -15,7 +15,7 @@ fi
 if ! command -v curl &> /dev/null; then
     print_yellow "curl not found. Installing..."
     if command -v apt &> /dev/null; then
-        sudo apt install -y curl
+        sudo apt update && sudo apt install -y curl
     elif command -v pacman &> /dev/null; then
         sudo pacman -S --noconfirm curl
     elif command -v dnf &> /dev/null; then
@@ -41,7 +41,13 @@ case "$ARCH" in
         ;;
 esac
 
-BIN_URL="https://github.com/$REPO/releases/latest/download/$BIN_NAME"
+LATEST_TAG=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep -o '"tag_name": "[^"]*"' | cut -d '"' -f 4)
+if [ -z "$LATEST_TAG" ]; then
+    print_yellow "Could not detect latest tag, using 'latest'"
+    BIN_URL="https://github.com/$REPO/releases/latest/download/$BIN_NAME"
+else
+    BIN_URL="https://github.com/$REPO/releases/download/$LATEST_TAG/$BIN_NAME"
+fi
 
 print_green "Downloading latest nyado binary for $ARCH from $BIN_URL"
 curl -L -o nyado "$BIN_URL"
@@ -51,13 +57,29 @@ print_green "Installing to ~/.local/bin/"
 mkdir -p "$HOME/.local/bin"
 mv nyado "$HOME/.local/bin/nyado"
 
-if [ ! -d "config" ]; then
-    print_yellow "config folder not found. Fetching it from GitHub..."
+fetch_config() {
+    print_yellow "Downloading config files from GitHub..."
+    if [ -z "$LATEST_TAG" ]; then
+        ARCHIVE_URL="https://github.com/$REPO/archive/refs/heads/main.tar.gz"
+    else
+        ARCHIVE_URL="https://github.com/$REPO/archive/refs/tags/$LATEST_TAG.tar.gz"
+    fi
     TMP_DIR=$(mktemp -d)
-    git clone --depth=1 "https://github.com/$REPO.git" "$TMP_DIR"
-    cp -r "$TMP_DIR/config" .
+    curl -L -o "$TMP_DIR/repo.tar.gz" "$ARCHIVE_URL"
+    tar -xzf "$TMP_DIR/repo.tar.gz" -C "$TMP_DIR"
+
+    CONFIG_SRC=$(find "$TMP_DIR" -type d -name "config" | head -n1)
+    if [ -n "$CONFIG_SRC" ]; then
+        cp -r "$CONFIG_SRC" .
+        print_green "Config files downloaded."
+    else
+        print_yellow "Config folder not found in archive."
+    fi
     rm -rf "$TMP_DIR"
-    print_green "Config files downloaded."
+}
+
+if [ ! -d "config" ]; then
+    fetch_config
 fi
 
 print_green "Removing old config files from ~/.config/nyado/"
