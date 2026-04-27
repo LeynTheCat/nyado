@@ -27,15 +27,29 @@ if ! command -v curl &> /dev/null; then
 fi
 
 REPO="LeynTheCat/nyado"
-BIN_URL="https://github.com/$REPO/releases/latest/download/nyado"
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)
+        BIN_NAME="nyado-x86_64-unknown-linux-musl"
+        ;;
+    aarch64)
+        BIN_NAME="nyado-aarch64-unknown-linux-musl"
+        ;;
+    *)
+        print_yellow "Unsupported architecture: $ARCH. Trying generic 'nyado' (may fail)."
+        BIN_NAME="nyado"
+        ;;
+esac
 
-print_green "Downloading latest nyado binary from $BIN_URL"
+BIN_URL="https://github.com/$REPO/releases/latest/download/$BIN_NAME"
+
+print_green "Downloading latest nyado binary for $ARCH from $BIN_URL"
 curl -L -o nyado "$BIN_URL"
 chmod +x nyado
 
 print_green "Installing to ~/.local/bin/"
 mkdir -p "$HOME/.local/bin"
-mv nyado "$HOME/.local/bin/"
+mv nyado "$HOME/.local/bin/nyado"
 
 if [ ! -d "config" ]; then
     print_yellow "config folder not found. Fetching it from GitHub..."
