@@ -10,34 +10,22 @@ permissions:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            pkgs: musl-tools
-          - target: aarch64-unknown-linux-musl
-            pkgs: gcc-aarch64-linux-gnu musl-dev musl-tools
-    runs-on: ubuntu-latest
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install cross-compilation tools
-        if: matrix.target == 'aarch64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu musl-dev musl-tools
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Cross compile
+        uses: zijiren233/cargo-cross@v1
         with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          profile: minimal
-          override: true
-
-      - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
-        env:
-          CC_aarch64_unknown_linux_musl: aarch64-linux-gnu-gcc
-          AR_aarch64_unknown_linux_musl: aarch64-linux-gnu-ar
+          command: build
+          targets: ${{ matrix.target }}
+          args: --release
 
       - name: Rename artifact
         run: mv target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
