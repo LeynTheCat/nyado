@@ -10,28 +10,44 @@ permissions:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            pkgs: musl-tools
+          - target: aarch64-unknown-linux-musl
+            pkgs: gcc-aarch64-linux-gnu musl-dev musl-tools
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install musl tools
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu musl-dev musl-tools
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: x86_64-unknown-linux-musl
+          target: ${{ matrix.target }}
           profile: minimal
           override: true
 
-      - name: Build static binary
-        run: cargo build --release --target x86_64-unknown-linux-musl
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CC_aarch64_unknown_linux_musl: aarch64-linux-gnu-gcc
+          AR_aarch64_unknown_linux_musl: aarch64-linux-gnu-ar
+
+      - name: Rename artifact
+        run: mv target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/x86_64-unknown-linux-musl/release/nyado
+          files: |
+            nyado-x86_64-unknown-linux-musl
+            nyado-aarch64-unknown-linux-musl
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
