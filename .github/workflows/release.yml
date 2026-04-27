@@ -20,12 +20,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build static binary for ${{ matrix.target }}
-        uses: docker://clux/muslrust:latest
-        with:
-          args: cargo build --release --target ${{ matrix.target }}
+        run: |
+          docker run --rm -v $PWD:/work -w /work clux/muslrust:latest sh -c "
+            rustup target add ${{ matrix.target }} && 
+            cargo build --release --target ${{ matrix.target }}
+          "
 
-      - name: Rename artifact
-        run: mv target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
+      - name: Copy artifact (fix permissions)
+        run: |
+          sudo cp target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
+          sudo chown $(id -u):$(id -g) nyado-${{ matrix.target }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
