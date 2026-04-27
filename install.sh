@@ -91,7 +91,28 @@ install() {
 
     print_info "Done! Run '$BINARY_NAME' to start."
     if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-        print_warn "$BIN_DIR not in PATH. Add: export PATH=\"\$HOME/.local/bin:\$PATH\""
+        print_warn "$BIN_DIR not in PATH."
+        echo -n "Do you want to add it to your shell configuration (recommended)? [y/N]: "
+        read -r answer
+        if [[ "$answer" =~ ^[Yy]$ ]]; then
+            SHELL_NAME=$(basename "$SHELL")
+            if [ "$SHELL_NAME" = "bash" ]; then
+                RC_FILE="$HOME/.bashrc"
+            elif [ "$SHELL_NAME" = "zsh" ]; then
+                RC_FILE="$HOME/.zshrc"
+            elif [ "$SHELL_NAME" = "fish" ]; then
+                RC_FILE="$HOME/.config/fish/config.fish"
+                echo "set -gx PATH \$PATH $BIN_DIR" >> "$RC_FILE"
+                print_info "Added to $RC_FILE (fish). Please restart your shell."
+                exit 0
+            else
+                RC_FILE="$HOME/.profile"
+            fi
+            echo "export PATH=\"\$BIN_DIR:\$PATH\"" >> "$RC_FILE"
+            print_info "Added to $RC_FILE. Please restart your shell or run: source $RC_FILE"
+        else
+            print_warn "You can manually add '$BIN_DIR' to your PATH later."
+        fi
     fi
 }
 

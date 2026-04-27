@@ -93,5 +93,26 @@ print_green "Nyado installed successfully."
 print_green "Run 'nyado' to start."
 
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    print_yellow "Note: $HOME/.local/bin is not in your PATH. Add it to your shell config."
+    print_yellow "Note: $HOME/.local/bin is not in your PATH."
+    echo -n "Do you want to add it to your shell configuration (recommended)? [y/N]: "
+    read -r answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        SHELL_NAME=$(basename "$SHELL")
+        if [ "$SHELL_NAME" = "bash" ]; then
+            RC_FILE="$HOME/.bashrc"
+        elif [ "$SHELL_NAME" = "zsh" ]; then
+            RC_FILE="$HOME/.zshrc"
+        elif [ "$SHELL_NAME" = "fish" ]; then
+            RC_FILE="$HOME/.config/fish/config.fish"
+            echo "set -gx PATH \$PATH $HOME/.local/bin" >> "$RC_FILE"
+            print_green "Added to $RC_FILE (fish). Please restart your shell."
+            exit 0
+        else
+            RC_FILE="$HOME/.profile"
+        fi
+        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$RC_FILE"
+        print_green "Added to $RC_FILE. Please restart your shell or run: source $RC_FILE"
+    else
+        print_yellow "You can manually add '$HOME/.local/bin' to your PATH later."
+    fi
 fi
