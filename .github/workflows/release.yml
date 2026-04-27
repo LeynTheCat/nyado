@@ -17,15 +17,12 @@ jobs:
           - x86_64-unknown-linux-musl
           - aarch64-unknown-linux-musl
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Cross compile
-        uses: zijiren233/cargo-cross@v1
+      - name: Build static binary for ${{ matrix.target }}
+        uses: docker://clux/muslrust:latest
         with:
-          command: build
-          targets: ${{ matrix.target }}
-          args: --release
+          args: cargo build --release --target ${{ matrix.target }}
 
       - name: Rename artifact
         run: mv target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
