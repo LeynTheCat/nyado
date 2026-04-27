@@ -166,7 +166,7 @@ impl App {
     }
 
     fn cmd_new_task(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
-        if let Ok(Some(text)) = popup(&self.i18n.get("popup_new_title"), &self.i18n.get("popup_new_hint"), "", term) {
+        if let Ok(Some(text)) = popup(&self.i18n.get("popup_new_title"), &self.i18n.get("popup_new_hint"), "", true, term) {
             if self.storage.todos.len() < MAX_TODOS {
                 let tag = if self.storage.filter_tag.is_empty() { String::new() } else { self.storage.filter_tag.clone() };
                 self.storage.todos.push(Todo::new(&text, &tag));
@@ -182,7 +182,7 @@ impl App {
         if !self.visible.is_empty() {
             let idx = self.visible[self.selected];
             let old_text = self.storage.todos[idx].text.clone();
-            if let Ok(Some(new_text)) = popup(&self.i18n.get("popup_edit_title"), &self.i18n.get("popup_edit_hint"), &old_text, term) {
+            if let Ok(Some(new_text)) = popup(&self.i18n.get("popup_edit_title"), &self.i18n.get("popup_edit_hint"), &old_text, true, term) {
                 self.storage.todos[idx].text = new_text;
                 self.storage.save();
                 self.rebuild_visible();
@@ -226,7 +226,7 @@ impl App {
             } else {
                 self.i18n.get("popup_set_tag_hint_empty").to_string()
             };
-            if let Ok(Some(tag_raw)) = popup(&self.i18n.get("popup_set_tag_title"), &hint, "", term) {
+            if let Ok(Some(tag_raw)) = popup(&self.i18n.get("popup_set_tag_title"), &hint, "", false, term) {
                 let cleaned: String = tag_raw.chars().filter(|c| !c.is_whitespace()).flat_map(|c| c.to_lowercase()).take(32).collect();
                 let idx = self.visible[self.selected];
                 if cleaned.is_empty() {
@@ -252,7 +252,7 @@ impl App {
             let text = &self.storage.todos[idx].text;
             let template = self.i18n.get("popup_delete_confirm");
             let prompt = template.replace("{}", text);
-            if let Ok(Some(ans)) = popup(&prompt, "", "", term) {
+            if let Ok(Some(ans)) = popup(&prompt, "", "", false, term) {
                 if ans == "y" || ans == "Y" {
                     self.storage.todos.remove(idx);
                     if self.selected >= self.visible.len().saturating_sub(1) && self.selected > 0 {
@@ -271,7 +271,7 @@ impl App {
         if !self.storage.todos.is_empty() {
             let template = self.i18n.get("popup_delete_all_confirm");
             let prompt = template.replace("{}", &self.storage.todos.len().to_string());
-            if let Ok(Some(ans)) = popup(&prompt, &self.i18n.get("popup_delete_all_warning"), "", term) {
+            if let Ok(Some(ans)) = popup(&prompt, &self.i18n.get("popup_delete_all_warning"), "", false, term) {
                 if ans == "y" || ans == "Y" {
                     self.storage.todos.clear();
                     self.selected = 0;
@@ -285,7 +285,7 @@ impl App {
     }
 
     fn cmd_search(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
-        if let Ok(Some(q)) = popup(&self.i18n.get("popup_search_title"), &self.i18n.get("popup_search_hint"), &self.storage.search, term) {
+        if let Ok(Some(q)) = popup(&self.i18n.get("popup_search_title"), &self.i18n.get("popup_search_hint"), &self.storage.search, true, term) {
             self.storage.search = q;
         } else {
             self.storage.search.clear();
@@ -323,7 +323,7 @@ impl App {
             let idx = self.visible[self.selected];
             let date_title = self.i18n.get("popup_due_date_title").to_string();
             let date_hint = self.i18n.get("popup_due_date_hint").to_string();
-            if let Ok(Some(date_str)) = popup(&date_title, &date_hint, "", term) {
+            if let Ok(Some(date_str)) = popup(&date_title, &date_hint, "", false, term) {
                 let trimmed_date = date_str.trim();
                 if trimmed_date.is_empty() {
                     self.storage.todos[idx].due_date = 0;
@@ -334,7 +334,7 @@ impl App {
                     return;
                 }
                 let time_hint = self.i18n.get("popup_due_time_hint").to_string();
-                let time_res = popup("", &time_hint, "", term);
+                let time_res = popup("", &time_hint, "", false, term);
                 let time_str = match time_res {
                     Ok(Some(t)) => t.trim().to_string(),
                     Ok(None) => "".to_string(),

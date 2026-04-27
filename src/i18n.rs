@@ -77,6 +77,8 @@ struct Localization {
     due_date_cleared: String,
     due_date_set: String,
     due_date_invalid: String,
+    #[serde(flatten)]
+    extra: HashMap<String, String>,
 }
 
 pub struct I18n {
@@ -135,76 +137,6 @@ impl I18n {
         self.current_index = (self.current_index + 1) % self.languages.len();
     }
 
-    fn get_from_loc<'a>(&'a self, loc: &'a Localization, key: &str) -> Option<&'a str> {
-        if let Some(v) = loc.ui.get(key) {
-            return Some(v);
-        }
-        match key {
-            "pending.prefix" => return Some(&loc.pending["prefix"]),
-            "done.prefix" => return Some(&loc.done["prefix"]),
-            "pinned.prefix" => return Some(&loc.pinned["prefix"]),
-            "total.prefix" => return Some(&loc.total["prefix"]),
-            "created_prefix" => return Some(&loc.created_prefix),
-            "done_prefix" => return Some(&loc.done_prefix),
-            "pinned_marker" => return Some(&loc.pinned_marker),
-            "selected_header" => return Some(&loc.selected_header),
-            "tags_header" => return Some(&loc.tags_header),
-            "stats_header" => return Some(&loc.stats_header),
-            "mood_all_done" => return Some(&loc.mood_all_done),
-            "mood_empty" => return Some(&loc.mood_empty),
-            "mood_one" => return Some(&loc.mood_one),
-            "mood_few" => return Some(&loc.mood_few),
-            "mood_several" => return Some(&loc.mood_several),
-            "mood_many" => return Some(&loc.mood_many),
-            "popup_new_title" => return Some(&loc.popup_new_title),
-            "popup_new_hint" => return Some(&loc.popup_new_hint),
-            "popup_edit_title" => return Some(&loc.popup_edit_title),
-            "popup_edit_hint" => return Some(&loc.popup_edit_hint),
-            "popup_set_tag_title" => return Some(&loc.popup_set_tag_title),
-            "popup_set_tag_hint_existing" => return Some(&loc.popup_set_tag_hint_existing),
-            "popup_set_tag_hint_empty" => return Some(&loc.popup_set_tag_hint_empty),
-            "popup_delete_confirm" => return Some(&loc.popup_delete_confirm),
-            "popup_delete_all_confirm" => return Some(&loc.popup_delete_all_confirm),
-            "popup_delete_all_warning" => return Some(&loc.popup_delete_all_warning),
-            "popup_search_title" => return Some(&loc.popup_search_title),
-            "popup_search_hint" => return Some(&loc.popup_search_hint),
-            "statusbar_hint_wide" => return Some(&loc.statusbar_hint_wide),
-            "statusbar_hint_medium" => return Some(&loc.statusbar_hint_medium),
-            "statusbar_hint_narrow" => return Some(&loc.statusbar_hint_narrow),
-            "progress_label" => return Some(&loc.progress_label),
-            "column_header" => return Some(&loc.column_header),
-            "scroll_up" => return Some(&loc.scroll_up),
-            "scroll_down" => return Some(&loc.scroll_down),
-            "topbar_title" => return Some(&loc.topbar_title),
-            "topbar_filter_prefix" => return Some(&loc.topbar_filter_prefix),
-            "topbar_search_prefix" => return Some(&loc.topbar_search_prefix),
-            "topbar_date_format" => return Some(&loc.topbar_date_format),
-            "title" => return Some(&loc.title),
-            "right_title" => return Some(&loc.right_title),
-            "celebration_line1" => return Some(&loc.celebration_line1),
-            "celebration_line2" => return Some(&loc.celebration_line2),
-            "celebration_line3" => return Some(&loc.celebration_line3),
-            "celebration_line4" => return Some(&loc.celebration_line4),
-            "celebration_line5" => return Some(&loc.celebration_line5),
-            "celebration_line6" => return Some(&loc.celebration_line6),
-            "empty_list_line1" => return Some(&loc.empty_list_line1),
-            "empty_list_line2" => return Some(&loc.empty_list_line2),
-            "popup_due_date_title" => return Some(&loc.popup_due_date_title),
-            "popup_due_date_hint" => return Some(&loc.popup_due_date_hint),
-            "popup_due_time_hint" => return Some(&loc.popup_due_time_hint),
-            "due_date_cleared" => return Some(&loc.due_date_cleared),
-            "due_date_set" => return Some(&loc.due_date_set),
-            "due_date_invalid" => return Some(&loc.due_date_invalid),
-            _ => {}
-        }
-        if let Some(stripped) = key.strip_prefix("messages.") {
-            if let Some(v) = loc.messages.get(stripped) {
-                return Some(v);
-            }
-        }
-        None
-    }
-
     fn get_en_loc(&self) -> Option<&Localization> {
         for (code, loc) in &self.languages {
             if code == "en" {
@@ -215,15 +147,103 @@ impl I18n {
     }
 
     pub fn get<'a>(&'a self, key: &'a str) -> &'a str {
-        let current_loc = &self.languages[self.current_index].1;
-        if let Some(val) = self.get_from_loc(current_loc, key) {
-            return val;
+        let loc = &self.languages[self.current_index].1;
+        if let Some(v) = loc.ui.get(key) {
+            return v;
         }
-        if let Some(en_loc) = self.get_en_loc() {
-            if let Some(val) = self.get_from_loc(en_loc, key) {
-                return val;
+        if let Some(stripped) = key.strip_prefix("pending.") {
+            if let Some(v) = loc.pending.get(stripped) {
+                return v;
             }
         }
-        key
+        if let Some(stripped) = key.strip_prefix("done.") {
+            if let Some(v) = loc.done.get(stripped) {
+                return v;
+            }
+        }
+        if let Some(stripped) = key.strip_prefix("pinned.") {
+            if let Some(v) = loc.pinned.get(stripped) {
+                return v;
+            }
+        }
+        if let Some(stripped) = key.strip_prefix("total.") {
+            if let Some(v) = loc.total.get(stripped) {
+                return v;
+            }
+        }
+        if let Some(stripped) = key.strip_prefix("messages.") {
+            if let Some(v) = loc.messages.get(stripped) {
+                return v;
+            }
+        }
+        if let Some(v) = loc.extra.get(key) {
+            return v;
+        }
+        let val = match key {
+            "created_prefix" => &loc.created_prefix,
+            "done_prefix" => &loc.done_prefix,
+            "pinned_marker" => &loc.pinned_marker,
+            "selected_header" => &loc.selected_header,
+            "tags_header" => &loc.tags_header,
+            "stats_header" => &loc.stats_header,
+            "mood_all_done" => &loc.mood_all_done,
+            "mood_empty" => &loc.mood_empty,
+            "mood_one" => &loc.mood_one,
+            "mood_few" => &loc.mood_few,
+            "mood_several" => &loc.mood_several,
+            "mood_many" => &loc.mood_many,
+            "popup_new_title" => &loc.popup_new_title,
+            "popup_new_hint" => &loc.popup_new_hint,
+            "popup_edit_title" => &loc.popup_edit_title,
+            "popup_edit_hint" => &loc.popup_edit_hint,
+            "popup_set_tag_title" => &loc.popup_set_tag_title,
+            "popup_set_tag_hint_existing" => &loc.popup_set_tag_hint_existing,
+            "popup_set_tag_hint_empty" => &loc.popup_set_tag_hint_empty,
+            "popup_delete_confirm" => &loc.popup_delete_confirm,
+            "popup_delete_all_confirm" => &loc.popup_delete_all_confirm,
+            "popup_delete_all_warning" => &loc.popup_delete_all_warning,
+            "popup_search_title" => &loc.popup_search_title,
+            "popup_search_hint" => &loc.popup_search_hint,
+            "statusbar_hint_wide" => &loc.statusbar_hint_wide,
+            "statusbar_hint_medium" => &loc.statusbar_hint_medium,
+            "statusbar_hint_narrow" => &loc.statusbar_hint_narrow,
+            "progress_label" => &loc.progress_label,
+            "column_header" => &loc.column_header,
+            "scroll_up" => &loc.scroll_up,
+            "scroll_down" => &loc.scroll_down,
+            "topbar_title" => &loc.topbar_title,
+            "topbar_filter_prefix" => &loc.topbar_filter_prefix,
+            "topbar_search_prefix" => &loc.topbar_search_prefix,
+            "topbar_date_format" => &loc.topbar_date_format,
+            "title" => &loc.title,
+            "right_title" => &loc.right_title,
+            "celebration_line1" => &loc.celebration_line1,
+            "celebration_line2" => &loc.celebration_line2,
+            "celebration_line3" => &loc.celebration_line3,
+            "celebration_line4" => &loc.celebration_line4,
+            "celebration_line5" => &loc.celebration_line5,
+            "celebration_line6" => &loc.celebration_line6,
+            "empty_list_line1" => &loc.empty_list_line1,
+            "empty_list_line2" => &loc.empty_list_line2,
+            "popup_due_date_title" => &loc.popup_due_date_title,
+            "popup_due_date_hint" => &loc.popup_due_date_hint,
+            "popup_due_time_hint" => &loc.popup_due_time_hint,
+            "due_date_cleared" => &loc.due_date_cleared,
+            "due_date_set" => &loc.due_date_set,
+            "due_date_invalid" => &loc.due_date_invalid,
+            _ => {
+                if let Some(en_loc) = self.get_en_loc() {
+                    if let Some(v) = en_loc.extra.get(key) {
+                        return v;
+                    }
+                    match key {
+                        _ => key,
+                    }
+                } else {
+                    key
+                }
+            }
+        };
+        val
     }
 }

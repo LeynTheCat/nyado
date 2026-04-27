@@ -19,6 +19,8 @@ pub const CAT_ASCII: [&str; 16] = [
     "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
 ];
 
+pub const CAT_HEIGHT: usize = CAT_ASCII.len();
+
 pub mod color {
     use ratatui::style::Color;
     pub const BORDER: Color = Color::Cyan;

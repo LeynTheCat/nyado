@@ -10,7 +10,7 @@ use crate::i18n::I18n;
 use crate::storage::Storage;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Clear, Paragraph},
     Frame,
@@ -82,8 +82,14 @@ pub fn draw(
 }
 
 pub fn draw_toosmall(frame: &mut Frame, size: Rect) {
-    let warn = Paragraph::new("Terminal too small. Please resize to at least 30x10.")
+    let message = vec![
+        "Terminal too small.",
+        "Minimum required: 30 columns x 10 rows.",
+        "Please resize your terminal and try again.",
+    ];
+    let para = Paragraph::new(message.join("\n"))
         .alignment(Alignment::Center)
-        .style(ratatui::style::Style::default().fg(ratatui::style::Color::Red).add_modifier(Modifier::BOLD));
-    frame.render_widget(warn, size);
+        .wrap(ratatui::widgets::Wrap { trim: true })
+        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD));
+    frame.render_widget(para, size);
 }
