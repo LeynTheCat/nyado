@@ -17,7 +17,15 @@ It supports multiple languages, tags, search, pinning, due dates.
 
 Choose one of the following methods:
 
-### 1. Quick install (binary, no compilation)
+### 1. From crates.io (requires Rust)
+
+~~~
+cargo install nyado
+~~~
+
+This will download and compile the latest version. Language files are built into the binary, but you can override them by placing your own lang_*.toml files in ~/.config/nyado/.
+
+### 2. Quick install (binary, no compilation)
 
 ~~~
 curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install_bin.sh | bash
@@ -29,7 +37,7 @@ This script:
 - Installs it to ~/.local/bin/
 - Fetches and installs language files to ~/.config/nyado/ (replaces old configs)
 
-### 2. Build from source (requires Rust)
+### 3. Build from source (via install script)
 
 ~~~
 curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install.sh | bash
@@ -41,7 +49,7 @@ The script will:
 - Build nyado in release mode
 - Install binary and config files
 
-### 3. Manual installation (git clone)
+### 4. Manual installation (git clone)
 
 ~~~
 git clone https://github.com/LeynTheCat/nyado.git
@@ -62,6 +70,7 @@ cp config/*.toml ~/.config/nyado/
 - **Binary installation**: simply run the same quick install command again – it will download the latest binary and update config files.
 - **Source installation (from git)**: cd into the cloned directory and run `./install.sh update`.
 - **If you used the one‑line curl installer**: just run the same command again – it will overwrite the binary and configs.
+- **crates.io version**: run `cargo install nyado --force` to upgrade.
 
 ## Uninstall
 
