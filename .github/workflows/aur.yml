@@ -1,0 +1,78 @@
+name: AUR Packages Deployment
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+jobs:
+  deploy-git:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get git commit short hash
+        id: vars
+        run: echo "short_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Prepare PKGBUILD for -git
+        run: |
+          cp PKGBUILD.git PKGBUILD
+          sed -i "s/COMMIT/${{ steps.vars.outputs.short_hash }}/" PKGBUILD
+
+      - name: Deploy to AUR (nyado-git)
+        uses: KSXGitHub/github-actions-deploy-aur@master
+        with:
+          pkgname: nyado-git
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
+          commit_message: "Update to commit ${{ steps.vars.outputs.short_hash }}"
+          allow_empty_commits: false
+
+  deploy-stable:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Calculate SHA256 for x86_64 binary
+        id: sha256_x86
+        run: |
+          URL="https://github.com/LeynTheCat/nyado/releases/download/v${{ steps.version.outputs.tag }}/nyado-x86_64-unknown-linux-musl"
+          HASH=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Calculate SHA256 for aarch64 binary
+        id: sha256_arm
+        run: |
+          URL="https://github.com/LeynTheCat/nyado/releases/download/v${{ steps.version.outputs.tag }}/nyado-aarch64-unknown-linux-musl"
+          HASH=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Prepare PKGBUILD for -bin
+        run: |
+          cp PKGBUILD.bin PKGBUILD
+          sed -i "s/pkgver=.*/pkgver=${{ steps.version.outputs.tag }}/" PKGBUILD
+          sed -i "s/PLACEHOLDER_X86_64/${{ steps.sha256_x86.outputs.hash }}/" PKGBUILD
+          sed -i "s/PLACEHOLDER_AARCH64/${{ steps.sha256_arm.outputs.hash }}/" PKGBUILD
+
+      - name: Deploy to AUR (nyado-bin)
+        uses: KSXGitHub/github-actions-deploy-aur@master
+        with:
+          pkgname: nyado-bin
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
+          commit_message: "Update to version ${{ steps.version.outputs.tag }}"
+          allow_empty_commits: false
