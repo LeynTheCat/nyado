@@ -76,3 +76,38 @@ jobs:
           ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
           commit_message: "Update to version ${{ steps.version.outputs.tag }}"
           allow_empty_commits: false
+
+  deploy-nyado:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Calculate SHA256 for source archive
+        id: sha256
+        run: |
+          URL="https://github.com/LeynTheCat/nyado/archive/v${{ steps.version.outputs.tag }}.tar.gz"
+          curl -sL "$URL" -o source.tar.gz
+          HASH=$(sha256sum source.tar.gz | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Prepare PKGBUILD for nyado
+        run: |
+          cp PKGBUILD.nyado PKGBUILD
+          sed -i "s/pkgver=.*/pkgver=${{ steps.version.outputs.tag }}/" PKGBUILD
+          sed -i "s/PLACEHOLDER/${{ steps.sha256.outputs.hash }}/" PKGBUILD
+
+      - name: Deploy to AUR (nyado)
+        uses: KSXGitHub/github-actions-deploy-aur@master
+        with:
+          pkgname: nyado
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
+          commit_message: "Update to version ${{ steps.version.outputs.tag }}"
+          allow_empty_commits: false

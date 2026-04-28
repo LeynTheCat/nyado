@@ -17,7 +17,7 @@ use std::io;
 use std::path::PathBuf;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
-const MAX_TODOS: usize = 1024;
+const MAX_TODOS: usize = 2048;
 const LANG_PREF_FILE: &str = "lang_pref.txt";
 
 pub struct App {
@@ -313,8 +313,6 @@ impl App {
             }
             self.selected = 0;
             self.rebuild_visible();
-            // let filter_msg = self.i18n.get("messages.filter_format").to_string().replace("{}", &self.storage.filter_tag);
-            // self.set_message(&filter_msg);
         }
     }
 
@@ -359,6 +357,13 @@ impl App {
         }
     }
 
+    fn cmd_help(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
+        let help_text = self.i18n.get("help_content").to_string();
+        let title = self.i18n.get("popup_help_title");
+        let hint = self.i18n.get("popup_help_hint");
+        let _ = popup(title, hint, &help_text, true, term);
+    }
+
     pub fn handle_input(&mut self, key: KeyCode, term: &mut Terminal<CrosstermBackend<io::Stdout>>, data_dir: &PathBuf) -> bool {
         match key_to_command(key) {
             Command::Quit => return false,
@@ -380,6 +385,7 @@ impl App {
             Command::ClearFilters => self.cmd_clear_filters(),
             Command::FilterTag(idx) => self.cmd_filter_tag(idx),
             Command::SetDueDate => self.cmd_set_due_date(term),
+            Command::Help => self.cmd_help(term),
             Command::None => {}
         }
         true

@@ -141,6 +141,7 @@ Search              | / / .
 Filter by tag (1‑9) | 1…9 (only for existing tags)
 Clear filters       | Esc
 Set due date/time   | M / m / ь / Ь
+Show help           | h / р , ?
 
 Note: Filtering works for the first nine most‑used tags displayed in the right panel.
 Press 1‑9 to filter by that tag, press Esc to clear the filter and the search query.

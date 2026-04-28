@@ -53,6 +53,9 @@ struct Localization {
     popup_delete_all_warning: String,
     popup_search_title: String,
     popup_search_hint: String,
+    popup_help_title: String,
+    popup_help_hint: String,
+    help_content: String,
     statusbar_hint_wide: String,
     statusbar_hint_medium: String,
     statusbar_hint_narrow: String,
@@ -84,6 +87,94 @@ struct Localization {
     extra: HashMap<String, String>,
 }
 
+impl Localization {
+    fn fill_missing(&mut self, default: &Localization) {
+        macro_rules! fill_field {
+            ($field:ident) => {
+                if self.$field.is_empty() {
+                    self.$field = default.$field.clone();
+                }
+            };
+        }
+        fill_field!(created_prefix);
+        fill_field!(done_prefix);
+        fill_field!(pinned_marker);
+        fill_field!(selected_header);
+        fill_field!(tags_header);
+        fill_field!(stats_header);
+        fill_field!(mood_all_done);
+        fill_field!(mood_empty);
+        fill_field!(mood_one);
+        fill_field!(mood_few);
+        fill_field!(mood_several);
+        fill_field!(mood_many);
+        fill_field!(popup_new_title);
+        fill_field!(popup_new_hint);
+        fill_field!(popup_edit_title);
+        fill_field!(popup_edit_hint);
+        fill_field!(popup_set_tag_title);
+        fill_field!(popup_set_tag_hint_existing);
+        fill_field!(popup_set_tag_hint_empty);
+        fill_field!(popup_delete_confirm);
+        fill_field!(popup_delete_all_confirm);
+        fill_field!(popup_delete_all_warning);
+        fill_field!(popup_search_title);
+        fill_field!(popup_search_hint);
+        fill_field!(popup_help_title);
+        fill_field!(popup_help_hint);
+        fill_field!(help_content);
+        fill_field!(statusbar_hint_wide);
+        fill_field!(statusbar_hint_medium);
+        fill_field!(statusbar_hint_narrow);
+        fill_field!(progress_label);
+        fill_field!(column_header);
+        fill_field!(scroll_up);
+        fill_field!(scroll_down);
+        fill_field!(topbar_title);
+        fill_field!(topbar_filter_prefix);
+        fill_field!(topbar_search_prefix);
+        fill_field!(topbar_date_format);
+        fill_field!(title);
+        fill_field!(right_title);
+        fill_field!(celebration_line1);
+        fill_field!(celebration_line2);
+        fill_field!(celebration_line3);
+        fill_field!(celebration_line4);
+        fill_field!(celebration_line5);
+        fill_field!(celebration_line6);
+        fill_field!(empty_list_line1);
+        fill_field!(empty_list_line2);
+        fill_field!(popup_due_date_title);
+        fill_field!(popup_due_date_hint);
+        fill_field!(popup_due_time_hint);
+        fill_field!(due_date_cleared);
+        fill_field!(due_date_set);
+        fill_field!(due_date_invalid);
+
+        if self.ui.is_empty() {
+            self.ui = default.ui.clone();
+        }
+        if self.pending.is_empty() {
+            self.pending = default.pending.clone();
+        }
+        if self.done.is_empty() {
+            self.done = default.done.clone();
+        }
+        if self.pinned.is_empty() {
+            self.pinned = default.pinned.clone();
+        }
+        if self.total.is_empty() {
+            self.total = default.total.clone();
+        }
+        if self.messages.is_empty() {
+            self.messages = default.messages.clone();
+        }
+        if self.extra.is_empty() {
+            self.extra = default.extra.clone();
+        }
+    }
+}
+
 pub struct I18n {
     languages: Vec<(String, Localization)>,
     current_index: usize,
@@ -93,11 +184,13 @@ pub struct I18n {
 impl I18n {
     pub fn new() -> Result<Self> {
         let config_dir = get_config_dir();
-        let mut languages = Vec::new();
-        let mut builtin_map = HashMap::new();
+        let mut builtin_langs: HashMap<String, Localization> = HashMap::new();
         for (code, content) in BUILTIN_LANGS {
-            builtin_map.insert(*code, *content);
+            if let Ok(loc) = toml::from_str::<Localization>(content) {
+                builtin_langs.insert(code.to_string(), loc);
+            }
         }
+        let mut all_langs = builtin_langs.clone();
         if config_dir.exists() && config_dir.is_dir() {
             for entry in fs::read_dir(&config_dir)? {
                 let entry = entry?;
@@ -106,19 +199,19 @@ impl I18n {
                     let name = path.file_name().unwrap().to_str().unwrap();
                     let code = &name[5..name.len()-5];
                     let content = fs::read_to_string(&path)?;
-                    let loc: Localization = toml::from_str(&content)?;
-                    languages.push((code.to_string(), loc));
+                    if let Ok(loc) = toml::from_str::<Localization>(&content) {
+                        all_langs.insert(code.to_string(), loc);
+                    }
                 }
             }
         }
-        for (code, content) in builtin_map {
-            if !languages.iter().any(|(c, _)| c == code) {
-                let loc: Localization = toml::from_str(content)?;
-                languages.push((code.to_string(), loc));
+        let en_loc = all_langs.get("en").cloned().ok_or_else(|| anyhow::anyhow!("English localization missing"))?;
+        let mut languages = Vec::new();
+        for (code, mut loc) in all_langs {
+            if code != "en" {
+                loc.fill_missing(&en_loc);
             }
-        }
-        if languages.is_empty() {
-            anyhow::bail!("No language files found");
+            languages.push((code, loc));
         }
         languages.sort_by(|(code_a, _), (code_b, _)| {
             if code_a == "en" {
@@ -216,6 +309,9 @@ impl I18n {
             "popup_delete_all_warning" => Some(&loc.popup_delete_all_warning),
             "popup_search_title" => Some(&loc.popup_search_title),
             "popup_search_hint" => Some(&loc.popup_search_hint),
+            "popup_help_title" => Some(&loc.popup_help_title),
+            "popup_help_hint" => Some(&loc.popup_help_hint),
+            "help_content" => Some(&loc.help_content),
             "statusbar_hint_wide" => Some(&loc.statusbar_hint_wide),
             "statusbar_hint_medium" => Some(&loc.statusbar_hint_medium),
             "statusbar_hint_narrow" => Some(&loc.statusbar_hint_narrow),
@@ -247,7 +343,7 @@ impl I18n {
         }
     }
 
-    pub fn get<'a>(&'a self, key: &'a str) -> &'a str {
+    pub fn get(&self, key: &str) -> &str {
         let current_loc = &self.languages[self.current_index].1;
         if let Some(val) = self.get_from_loc(current_loc, key) {
             return val;

@@ -2,7 +2,7 @@
 # Contributor: Alexey Neverov <leyn.the.cat@gmail.com>
 
 pkgname=nyado-bin
-pkgver=0.2.0
+pkgver=0.2.1
 pkgrel=1
 pkgdesc="A Rust todo-list manager with TUI, inspired by meowdo"
 arch=('x86_64' 'aarch64')
@@ -13,20 +13,14 @@ conflicts=("nyado")
 options=(!strip)
 
 if [[ "$CARCH" == "x86_64" ]]; then
-    source_x86_64=("https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-x86_64-unknown-linux-musl")
-    sha256sums_x86_64=('PLACEHOLDER_X86_64')
+    source=("https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-x86_64-unknown-linux-musl")
+    sha256sums=('PLACEHOLDER_X86_64')
 elif [[ "$CARCH" == "aarch64" ]]; then
-    source_aarch64=("https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-aarch64-unknown-linux-musl")
-    sha256sums_aarch64=('PLACEHOLDER_AARCH64')
+    source=("https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-aarch64-unknown-linux-musl")
+    sha256sums=('PLACEHOLDER_AARCH64')
 fi
 
 package() {
     cd "$srcdir"
-    local binary_name
-    if [[ "$CARCH" == "x86_64" ]]; then
-        binary_name="nyado-x86_64-unknown-linux-musl"
-    else
-        binary_name="nyado-aarch64-unknown-linux-musl"
-    fi
-    install -Dm755 "$binary_name" "$pkgdir/usr/bin/nyado"
+    install -Dm755 "${source##*/}" "$pkgdir/usr/bin/nyado"
 }
