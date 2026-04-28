@@ -1,5 +1,3 @@
-<img align="right" src="img/nyado.png" width="150" alt="nyado logo">
-
 # nyado – a Rust todo‑list with TUI
 
 ![Rust Version](https://img.shields.io/badge/rust-1.70+-orange.svg)
@@ -10,8 +8,12 @@
 ![Features](https://img.shields.io/badge/features-tags%20%7C%20search%20%7C%20due%20dates-yellow)
 ![GitHub release](https://img.shields.io/github/v/release/LeynTheCat/nyado)
 
+<img align="left" src="img/nyado.png" width="120" alt="nyado logo">
+
+```
 nyado is a terminal-based task manager inspired by meowdo.
 It supports multiple languages, tags, search, pinning, due dates.
+```
 
 ![nyado preview](img/preview.png)
 
@@ -31,7 +33,7 @@ This will download and compile the latest version. Language files are built into
 
 If you are on Arch Linux (or an Arch‑based distribution), you can install one of the AUR packages:
 
-- **Stable binary package** (built from GitHub releases):
+- **Pre‑compiled binary** (fast, no compilation):
   ```
   paru -S nyado-bin
   ```
@@ -40,12 +42,17 @@ If you are on Arch Linux (or an Arch‑based distribution), you can install one 
   yay -S nyado-bin
   ```
 
-- **Git development package** (builds from the latest commit):
+- **Source – release tarball** (compiled from the latest release):
+  ```
+  paru -S nyado
+  ```
+
+- **Source – latest git commit** (bleeding edge):
   ```
   paru -S nyado-git
   ```
-
-Both packages provide the `nyado` command and automatically install the required language files.
+  
+All three packages provide the `nyado` command and automatically install the required language files.
 
 ### 3. Quick install (binary, no compilation)
 
