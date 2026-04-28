@@ -1,6 +1,6 @@
 [package]
 name = "nyado"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2024"
 authors = ["InTeaReable <leyn.the.cat@gmail.com>"]
 description = "A Rust todo-list manager with TUI, inspired by meowdo"

@@ -47,14 +47,19 @@ jobs:
 
       - name: Wait for release files to be available
         run: |
-          for i in {1..10}; do
-            if curl -s -I "https://github.com/LeynTheCat/nyado/releases/download/v${{ steps.version.outputs.tag }}/nyado-x86_64-unknown-linux-musl" | head -n 1 | grep -q 200; then
-              echo "Release files found" && exit 0
+          for i in {1..30}; do
+            URL_X86="https://github.com/LeynTheCat/nyado/releases/download/v${{ steps.version.outputs.tag }}/nyado-x86_64-unknown-linux-musl"
+            URL_ARM="https://github.com/LeynTheCat/nyado/releases/download/v${{ steps.version.outputs.tag }}/nyado-aarch64-unknown-linux-musl"
+            STATUS_X86=$(curl -s -o /dev/null -w "%{http_code}" "$URL_X86")
+            STATUS_ARM=$(curl -s -o /dev/null -w "%{http_code}" "$URL_ARM")
+            if [ "$STATUS_X86" = "200" ] && [ "$STATUS_ARM" = "200" ]; then
+              echo "Both release files found"
+              exit 0
             fi
-            echo "Waiting for release files... attempt $i"
-            sleep 5
+            echo "Waiting for release files... attempt $i (x86: $STATUS_X86, arm: $STATUS_ARM)"
+            sleep 10
           done
-          echo "Release files not found after 50 seconds" && exit 1
+          echo "Release files not found after 300 seconds" && exit 1
 
       - name: Calculate SHA256 for x86_64 binary
         id: sha256_x86
