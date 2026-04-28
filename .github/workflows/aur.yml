@@ -2,41 +2,11 @@ name: AUR Packages Deployment
 
 on:
   push:
-    branches: [ main ]
     tags:
       - 'v*'
 
 jobs:
-  deploy-git:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get git commit short hash
-        id: vars
-        run: echo "short_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Prepare PKGBUILD for -git
-        run: |
-          cp PKGBUILD.git PKGBUILD
-          sed -i "s/COMMIT/${{ steps.vars.outputs.short_hash }}/" PKGBUILD
-
-      - name: Deploy to AUR (nyado-git)
-        uses: KSXGitHub/github-actions-deploy-aur@master
-        with:
-          pkgname: nyado-git
-          pkgbuild: ./PKGBUILD
-          commit_username: ${{ secrets.AUR_USERNAME }}
-          commit_email: ${{ secrets.AUR_EMAIL }}
-          ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
-          commit_message: "Update to commit ${{ steps.vars.outputs.short_hash }}"
-          allow_empty_commits: false
-
   deploy-stable:
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +69,6 @@ jobs:
           allow_empty_commits: false
 
   deploy-nyado:
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
