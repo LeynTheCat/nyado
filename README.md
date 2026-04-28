@@ -150,7 +150,6 @@ Press 1‑9 to filter by that tag, press Esc to clear the filter and the search 
 
 - Language files are stored in `~/.config/nyado/lang_*.toml` (Linux) or `%APPDATA%\Local\nyado\lang_*.toml` (Windows).
 - You can add your own language by placing a `lang_xx.toml` file there (just copy an existing one and translate).
-- The default language order is English, Russian, Chinese, Japanese (determined by file names).
 
 ## Data storage
 
