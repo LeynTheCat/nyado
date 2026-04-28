@@ -2,6 +2,11 @@
 
 ![Rust Version](https://img.shields.io/badge/rust-1.70+-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20x86__64%20%7C%20aarch64-lightgrey)
+![TUI](https://img.shields.io/badge/UI-ratatui-purple)
+![i18n](https://img.shields.io/badge/i18n-multilingual-brightgreen)
+![Features](https://img.shields.io/badge/features-tags%20%7C%20search%20%7C%20due%20dates-yellow)
+![GitHub release](https://img.shields.io/github/v/release/LeynTheCat/nyado)
 
 nyado is a terminal-based task manager inspired by meowdo.
 It supports multiple languages, tags, search, pinning, due dates.

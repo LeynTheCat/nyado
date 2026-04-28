@@ -1,8 +1,10 @@
 use crate::todo::Todo;
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
+
+const MAX_BACKUPS: usize = 5;
 
 pub struct Storage {
     pub todos: Vec<Todo>,
@@ -27,6 +29,8 @@ impl Storage {
 
     pub fn load(&mut self) {
         if !self.path.exists() {
+            self.todos.clear();
+            self.dirty_tags = true;
             return;
         }
         let file = File::open(&self.path).unwrap();
@@ -43,11 +47,63 @@ impl Storage {
     }
 
     pub fn save(&self) {
+        self.create_backup();
         let mut file = File::create(&self.path).unwrap();
         for todo in &self.todos {
             write!(file, "{}", todo.to_line()).unwrap();
         }
     }
+
+    fn create_backup(&self) {
+        if !self.path.exists() {
+            return;
+        }
+        let default_dir = PathBuf::from(".");
+        let dir = self.path.parent().unwrap_or(&default_dir);
+        let stem = self.path.file_stem().unwrap().to_str().unwrap();
+        let ext = self.path.extension().and_then(|e| e.to_str()).unwrap_or("");
+
+        let backup_name = |n: usize| {
+            if ext.is_empty() {
+                format!("{}.bak.{}", stem, n)
+            } else {
+                format!("{}.{}.bak.{}", stem, ext, n)
+            }
+        };
+
+        for i in (0..MAX_BACKUPS-1).rev() {
+            let old = dir.join(backup_name(i));
+            let new = dir.join(backup_name(i+1));
+            if old.exists() {
+                let _ = fs::rename(&old, &new);
+            }
+        }
+        let backup_path = dir.join(backup_name(0));
+        let _ = fs::copy(&self.path, &backup_path);
+    }
+
+    /*
+    pub fn restore_latest_backup(&mut self) -> bool {
+        let default_dir = PathBuf::from(".");
+        let dir = self.path.parent().unwrap_or(&default_dir);
+        let stem = self.path.file_stem().unwrap().to_str().unwrap();
+        let ext = self.path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let backup_name = if ext.is_empty() {
+            format!("{}.bak.0", stem)
+        } else {
+            format!("{}.{}.bak.0", stem, ext)
+        };
+        let backup_path = dir.join(backup_name);
+        if backup_path.exists() {
+            let _ = fs::copy(&backup_path, &self.path);
+            self.load();
+            true
+        } else {
+            false
+        }
+    }
+    */
+    
 
     pub fn rebuild_tags(&mut self) {
         if !self.dirty_tags {
