@@ -1,10 +1,11 @@
+// ============================ app.rs ============================
 use crate::commands::{key_to_command, Command};
 use crate::i18n::I18n;
-use crate::popup::popup;
+use crate::popup::{popup, popup_with_mode, PopupMode};
 use crate::storage::Storage;
 use crate::todo::Todo;
-use crate::ui::{draw, draw_toosmall};
 use crate::todo::now_secs;
+use crate::ui::{draw, draw_toosmall};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
@@ -29,31 +30,6 @@ pub struct App {
     message: String,
     message_ttl: u8,
     celebrate: u8,
-}
-
-fn parse_datetime(date_str: &str, time_str: &str) -> Option<u64> {
-    let parts: Vec<&str> = date_str.split('-').collect();
-    if parts.len() != 3 {
-        return None;
-    }
-    let year = parts[0].parse::<i32>().ok()?;
-    let month = parts[1].parse::<u32>().ok()?;
-    let day = parts[2].parse::<u32>().ok()?;
-    let naive_date = NaiveDate::from_ymd_opt(year, month, day)?;
-    let (hour, minute) = if time_str.is_empty() {
-        (0, 0)
-    } else {
-        let time_parts: Vec<&str> = time_str.split(':').collect();
-        if time_parts.len() != 2 {
-            return None;
-        }
-        let h = time_parts[0].parse::<u32>().ok()?;
-        let m = time_parts[1].parse::<u32>().ok()?;
-        (h, m)
-    };
-    let naive_time = NaiveTime::from_hms_opt(hour, minute, 0)?;
-    let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
-    Some(naive_datetime.and_utc().timestamp() as u64)
 }
 
 impl App {
@@ -95,54 +71,63 @@ impl App {
         self.message_ttl = 5;
     }
 
-    fn check_all_done(&mut self) {
-        if self.storage.pending_count() == 0 && !self.storage.todos.is_empty() {
-            self.celebrate = 10;
-            let msg = self.i18n.get("messages.all_done").to_string();
-            self.set_message(&msg);
+    pub fn handle_input(&mut self, key: KeyCode, term: &mut Terminal<CrosstermBackend<io::Stdout>>, data_dir: &PathBuf) -> bool {
+        match key_to_command(key) {
+            Command::Quit => return false,
+            Command::Language => self.cmd_language(data_dir),
+            Command::Up => self.cmd_up(),
+            Command::Down => self.cmd_down(),
+            Command::Top => self.cmd_top(),
+            Command::Bottom => self.cmd_bottom(),
+            Command::PageUp => self.cmd_page_up(term),
+            Command::PageDown => self.cmd_page_down(term),
+            Command::NewTask => self.cmd_new_task(term),
+            Command::EditTask => self.cmd_edit_task(term),
+            Command::ToggleDone => self.cmd_toggle_done(),
+            Command::TogglePin => self.cmd_toggle_pin(),
+            Command::SetTag => self.cmd_set_tag(term),
+            Command::DeleteTask => self.cmd_delete_task(term),
+            Command::DeleteAll => self.cmd_delete_all(term),
+            Command::Search => self.cmd_search(term),
+            Command::ClearFilters => self.cmd_clear_filters(),
+            Command::FilterTag(idx) => self.cmd_filter_tag(idx),
+            Command::SetDueDate => self.cmd_set_due_date(term),
+            Command::Help => self.cmd_help(term),
+            Command::None => {}
+        }
+        true
+    }
+
+    pub fn tick(&mut self) {
+        if self.celebrate > 0 {
+            self.celebrate -= 1;
+        }
+        if self.message_ttl > 0 {
+            self.message_ttl -= 1;
+        } else {
+            self.message.clear();
         }
     }
 
-    fn sort_todos(&mut self) {
-        self.storage.todos.sort_by(|a, b| {
-            if a.pinned != b.pinned {
-                return b.pinned.cmp(&a.pinned);
+    pub fn draw(&mut self, terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<(), anyhow::Error> {
+        terminal.draw(|f| {
+            let size = f.size();
+            if size.height < 10 || size.width < 30 {
+                draw_toosmall(f, size);
+                return;
             }
-            if a.done != b.done {
-                return a.done.cmp(&b.done);
-            }
-            let now = now_secs();
-            let a_overdue = a.due_date > 0 && a.due_date < now;
-            let b_overdue = b.due_date > 0 && b.due_date < now;
-            if a_overdue != b_overdue {
-                return b_overdue.cmp(&a_overdue);
-            }
-            let a_has_due = a.due_date > 0;
-            let b_has_due = b.due_date > 0;
-            if a_has_due != b_has_due {
-                return b_has_due.cmp(&a_has_due);
-            }
-            if a_has_due && b_has_due {
-                return a.due_date.cmp(&b.due_date);
-            }
-            std::cmp::Ordering::Equal
-        });
-        self.storage.dirty_tags = true;
-        self.rebuild_visible();
-    }
-
-    fn save_current_language(&self, data_dir: &PathBuf) {
-        let code = self.i18n.current_code();
-        let path = data_dir.join(LANG_PREF_FILE);
-        let _ = fs::write(path, code);
-    }
-
-    fn load_saved_language(i18n: &mut I18n, data_dir: &PathBuf) {
-        let path = data_dir.join(LANG_PREF_FILE);
-        if let Ok(content) = fs::read_to_string(&path) {
-            let code = content.trim();
-            i18n.set_language_by_code(code);
-        }
+            draw(
+                f, size,
+                &self.storage,
+                &self.visible,
+                self.selected,
+                &mut self.list_top,
+                &self.i18n,
+                &self.message,
+                self.celebrate > 0,
+            );
+        })?;
+        Ok(())
     }
 
     fn cmd_language(&mut self, data_dir: &PathBuf) {
@@ -156,10 +141,12 @@ impl App {
     fn cmd_down(&mut self) { if self.selected + 1 < self.visible.len() { self.selected += 1; } }
     fn cmd_top(&mut self) { self.selected = 0; }
     fn cmd_bottom(&mut self) { self.selected = self.visible.len().saturating_sub(1); }
+
     fn cmd_page_up(&mut self, term: &Terminal<CrosstermBackend<io::Stdout>>) {
         let step = (term.size().unwrap().height as usize).saturating_sub(5);
         self.selected = self.selected.saturating_sub(step);
     }
+
     fn cmd_page_down(&mut self, term: &Terminal<CrosstermBackend<io::Stdout>>) {
         let step = (term.size().unwrap().height as usize).saturating_sub(5);
         self.selected = (self.selected + step).min(self.visible.len().saturating_sub(1));
@@ -361,67 +348,83 @@ impl App {
         let help_text = self.i18n.get("help_content").to_string();
         let title = self.i18n.get("popup_help_title");
         let hint = self.i18n.get("popup_help_hint");
-        let _ = popup(title, hint, &help_text, true, term);
+        let _ = popup_with_mode(title, hint, &help_text, PopupMode::Readonly, term);
     }
 
-    pub fn handle_input(&mut self, key: KeyCode, term: &mut Terminal<CrosstermBackend<io::Stdout>>, data_dir: &PathBuf) -> bool {
-        match key_to_command(key) {
-            Command::Quit => return false,
-            Command::Language => self.cmd_language(data_dir),
-            Command::Up => self.cmd_up(),
-            Command::Down => self.cmd_down(),
-            Command::Top => self.cmd_top(),
-            Command::Bottom => self.cmd_bottom(),
-            Command::PageUp => self.cmd_page_up(term),
-            Command::PageDown => self.cmd_page_down(term),
-            Command::NewTask => self.cmd_new_task(term),
-            Command::EditTask => self.cmd_edit_task(term),
-            Command::ToggleDone => self.cmd_toggle_done(),
-            Command::TogglePin => self.cmd_toggle_pin(),
-            Command::SetTag => self.cmd_set_tag(term),
-            Command::DeleteTask => self.cmd_delete_task(term),
-            Command::DeleteAll => self.cmd_delete_all(term),
-            Command::Search => self.cmd_search(term),
-            Command::ClearFilters => self.cmd_clear_filters(),
-            Command::FilterTag(idx) => self.cmd_filter_tag(idx),
-            Command::SetDueDate => self.cmd_set_due_date(term),
-            Command::Help => self.cmd_help(term),
-            Command::None => {}
-        }
-        true
-    }
-
-    pub fn tick(&mut self) {
-        if self.celebrate > 0 {
-            self.celebrate -= 1;
-        }
-        if self.message_ttl > 0 {
-            self.message_ttl -= 1;
-        } else {
-            self.message.clear();
+    fn check_all_done(&mut self) {
+        if self.storage.pending_count() == 0 && !self.storage.todos.is_empty() {
+            self.celebrate = 10;
+            let msg = self.i18n.get("messages.all_done").to_string();
+            self.set_message(&msg);
         }
     }
 
-    pub fn draw(&mut self, terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<(), anyhow::Error> {
-        terminal.draw(|f| {
-            let size = f.size();
-            if size.height < 10 || size.width < 30 {
-                draw_toosmall(f, size);
-                return;
+    fn sort_todos(&mut self) {
+        self.storage.todos.sort_by(|a, b| {
+            if a.pinned != b.pinned {
+                return b.pinned.cmp(&a.pinned);
             }
-            draw(
-                f, size,
-                &self.storage,
-                &self.visible,
-                self.selected,
-                &mut self.list_top,
-                &self.i18n,
-                &self.message,
-                self.celebrate > 0,
-            );
-        })?;
-        Ok(())
+            if a.done != b.done {
+                return a.done.cmp(&b.done);
+            }
+            let now = now_secs();
+            let a_overdue = a.due_date > 0 && a.due_date < now;
+            let b_overdue = b.due_date > 0 && b.due_date < now;
+            if a_overdue != b_overdue {
+                return b_overdue.cmp(&a_overdue);
+            }
+            let a_has_due = a.due_date > 0;
+            let b_has_due = b.due_date > 0;
+            if a_has_due != b_has_due {
+                return b_has_due.cmp(&a_has_due);
+            }
+            if a_has_due && b_has_due {
+                return a.due_date.cmp(&b.due_date);
+            }
+            std::cmp::Ordering::Equal
+        });
+        self.storage.dirty_tags = true;
+        self.rebuild_visible();
     }
+
+    fn save_current_language(&self, data_dir: &PathBuf) {
+        let code = self.i18n.current_code();
+        let path = data_dir.join(LANG_PREF_FILE);
+        let _ = fs::write(path, code);
+    }
+
+    fn load_saved_language(i18n: &mut I18n, data_dir: &PathBuf) {
+        let path = data_dir.join(LANG_PREF_FILE);
+        if let Ok(content) = fs::read_to_string(&path) {
+            let code = content.trim();
+            i18n.set_language_by_code(code);
+        }
+    }
+}
+
+fn parse_datetime(date_str: &str, time_str: &str) -> Option<u64> {
+    let parts: Vec<&str> = date_str.split('-').collect();
+    if parts.len() != 3 {
+        return None;
+    }
+    let year = parts[0].parse::<i32>().ok()?;
+    let month = parts[1].parse::<u32>().ok()?;
+    let day = parts[2].parse::<u32>().ok()?;
+    let naive_date = NaiveDate::from_ymd_opt(year, month, day)?;
+    let (hour, minute) = if time_str.is_empty() {
+        (0, 0)
+    } else {
+        let time_parts: Vec<&str> = time_str.split(':').collect();
+        if time_parts.len() != 2 {
+            return None;
+        }
+        let h = time_parts[0].parse::<u32>().ok()?;
+        let m = time_parts[1].parse::<u32>().ok()?;
+        (h, m)
+    };
+    let naive_time = NaiveTime::from_hms_opt(hour, minute, 0)?;
+    let naive_datetime = NaiveDateTime::new(naive_date, naive_time);
+    Some(naive_datetime.and_utc().timestamp() as u64)
 }
 
 pub fn run() -> anyhow::Result<()> {

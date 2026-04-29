@@ -354,7 +354,7 @@ dependencies = [
 
 [[package]]
 name = "nyado"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "anyhow",
  "chrono",
@@ -363,6 +363,7 @@ dependencies = [
  "ratatui",
  "serde",
  "toml",
+ "unicode-width",
 ]
 
 [[package]]

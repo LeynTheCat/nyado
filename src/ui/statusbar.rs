@@ -1,4 +1,4 @@
-use super::common::{color, truncate_text};
+use super::common::{color, truncate_text_by_width};
 use crate::i18n::I18n;
 use ratatui::{
     layout::Rect,
@@ -7,6 +7,7 @@ use ratatui::{
     widgets::{Block, Paragraph},
     Frame,
 };
+use unicode_width::UnicodeWidthStr;
 
 pub fn draw_statusbar(frame: &mut Frame, area: Rect, message: &str, i18n: &I18n) {
     if area.width == 0 {
@@ -23,13 +24,13 @@ pub fn draw_statusbar(frame: &mut Frame, area: Rect, message: &str, i18n: &I18n)
     ];
     let mut chosen_hint = hints[2];
     for &hint in &hints {
-        let hint_width = hint.chars().count() as u16;
+        let hint_width = hint.width() as u16;
         if hint_width + 2 <= area.width {
             chosen_hint = hint;
             break;
         }
     }
-    let hint_width = chosen_hint.chars().count() as u16;
+    let hint_width = chosen_hint.width() as u16;
     let x = area.left() + 2;
     if hint_width + 2 <= area.width {
         frame.render_widget(Paragraph::new(chosen_hint), Rect::new(x, area.top(), hint_width, 1));
@@ -37,8 +38,8 @@ pub fn draw_statusbar(frame: &mut Frame, area: Rect, message: &str, i18n: &I18n)
 
     if !message.is_empty() {
         let max_msg_width = (area.width as usize).saturating_sub(2);
-        let truncated_msg = truncate_text(message, max_msg_width);
-        let msg_width = truncated_msg.chars().count() as u16;
+        let truncated_msg = truncate_text_by_width(message, max_msg_width);
+        let msg_width = truncated_msg.width() as u16;
         if msg_width > 0 && msg_width + 2 <= area.width {
             let msg_x = area.right() - msg_width - 2;
             frame.render_widget(

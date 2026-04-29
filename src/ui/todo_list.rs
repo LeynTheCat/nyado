@@ -1,7 +1,7 @@
-use super::common::{color, tag_color, truncate_text};
+use super::common::{color, truncate_text_by_width, visual_width};
+use super::progress_bar::draw_progress_bar;
 use crate::i18n::I18n;
 use crate::storage::Storage;
-use super::progress_bar::draw_progress_bar;
 use crate::todo::now_secs;
 use ratatui::{
     layout::Rect,
@@ -41,7 +41,7 @@ pub fn draw_todo_list(
 
     if inner.width > 20 {
         let header = Line::from(vec![Span::raw(i18n.get("column_header"))]);
-        let header_width = header.width() as u16;
+        let header_width = visual_width(i18n.get("column_header")) as u16;
         if header_width + 2 <= inner.width {
             frame.render_widget(Paragraph::new(header).style(Style::default().dim().add_modifier(Modifier::BOLD)),
                                 Rect::new(inner.left() + 1, inner.top() + 2, header_width, 1));
@@ -66,8 +66,8 @@ pub fn draw_todo_list(
     if total_items == 0 {
         let msg1 = i18n.get("empty_list_line1");
         let msg2 = i18n.get("empty_list_line2");
-        let msg1_len = msg1.chars().count() as u16;
-        let msg2_len = msg2.chars().count() as u16;
+        let msg1_len = visual_width(msg1) as u16;
+        let msg2_len = visual_width(msg2) as u16;
 
         let center_y = list_start_y + (list_height / 2) as u16;
         let y1 = center_y.saturating_sub(1);
@@ -99,7 +99,7 @@ pub fn draw_todo_list(
 
     if *scroll_state > 0 {
         let up = i18n.get("scroll_up");
-        let up_len = up.chars().count() as u16;
+        let up_len = visual_width(up) as u16;
         if up_len + 1 <= inner.width {
             frame.render_widget(
                 Paragraph::new(Span::styled(up, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD))),
@@ -109,7 +109,7 @@ pub fn draw_todo_list(
     }
     if *scroll_state + list_height < total_items {
         let down = i18n.get("scroll_down");
-        let down_len = down.chars().count() as u16;
+        let down_len = visual_width(down) as u16;
         if down_len + 1 <= inner.width {
             frame.render_widget(
                 Paragraph::new(Span::styled(down, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD))),
@@ -141,46 +141,34 @@ pub fn draw_todo_list(
         let pin_mark = if todo.pinned && !todo.done { '*' } else { ' ' };
         let done_mark = if todo.done { 'x' } else { ' ' };
 
-        let mut spans = Vec::new();
-        spans.push(Span::styled(format!("{} [{}] ", pin_mark, done_mark), base_style));
+        let mut line_text = String::new();
+        line_text.push_str(&format!("{} [{}] ", pin_mark, done_mark));
 
         if !todo.tag.is_empty() {
-            let tag_c = tag_color(&todo.tag);
-            let tag_style = if is_selected {
-                base_style
-            } else {
-                Style::default().fg(tag_c).add_modifier(Modifier::BOLD)
-            };
-            spans.push(Span::styled(format!("#{} ", todo.tag), tag_style));
+            line_text.push_str(&format!("#{} ", todo.tag));
         }
 
         if !todo.done && todo.due_date > 0 {
             let now = now_secs();
             let overdue = todo.due_date < now;
             let due_symbol = if overdue { "‼ " } else { "~~ " };
-            let due_style = if is_selected {
-                base_style
-            } else if overdue {
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)
-            };
-            spans.push(Span::styled(due_symbol, due_style));
+            line_text.push_str(due_symbol);
         }
 
-        let used_width: usize = spans.iter().map(|s| s.content.len()).sum();
+        let text_part = &todo.text;
+        let used_width = visual_width(&line_text);
         let max_width = (inner.width as usize).saturating_sub(used_width + 2);
-        let text_display = if todo.text.len() > max_width {
-            truncate_text(&todo.text, max_width.saturating_sub(1))
+        let truncated_text = if visual_width(text_part) > max_width {
+            truncate_text_by_width(text_part, max_width.saturating_sub(1)) + "…"
         } else {
-            todo.text.clone()
+            text_part.clone()
         };
-        spans.push(Span::styled(text_display, base_style));
+        line_text.push_str(&truncated_text);
 
-        let line = Line::from(spans);
-        let line_len = line.width() as u16;
-        if y < inner.bottom() - 1 && line_len + 1 <= inner.width {
-            frame.render_widget(Paragraph::new(line), Rect::new(inner.left() + 1, y, line_len, 1));
+        let line_width = visual_width(&line_text) as u16;
+        let spans = vec![Span::styled(line_text, base_style)];
+        if y < inner.bottom() - 1 && line_width + 1 <= inner.width {
+            frame.render_widget(Paragraph::new(Line::from(spans)), Rect::new(inner.left() + 1, y, line_width, 1));
         }
     }
 }

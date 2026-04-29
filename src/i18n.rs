@@ -205,7 +205,10 @@ impl I18n {
                 }
             }
         }
-        let en_loc = all_langs.get("en").cloned().ok_or_else(|| anyhow::anyhow!("English localization missing"))?;
+        let en_loc = all_langs
+            .get("en")
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("English localization missing"))?;
         let mut languages = Vec::new();
         for (code, mut loc) in all_langs {
             if code != "en" {

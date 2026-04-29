@@ -1,10 +1,9 @@
 mod common;
-mod bongo;
-mod todo_list;
-mod right_panel;
-mod topbar;
-mod statusbar;
 mod progress_bar;
+mod right_panel;
+mod statusbar;
+mod todo_list;
+mod topbar;
 
 use crate::i18n::I18n;
 use crate::storage::Storage;
@@ -15,10 +14,10 @@ use ratatui::{
     widgets::{Clear, Paragraph},
     Frame,
 };
-use topbar::draw_topbar;
+use right_panel::draw_right_panel;
 use statusbar::draw_statusbar;
 use todo_list::draw_todo_list;
-use right_panel::draw_right_panel;
+use topbar::draw_topbar;
 
 pub fn draw(
     frame: &mut Frame,
@@ -46,7 +45,10 @@ pub fn draw(
             if line.is_empty() {
                 spans.push(Line::from(""));
             } else {
-                spans.push(Line::from(vec![Span::styled(line, Style::default().fg(common::color::GREEN).add_modifier(Modifier::BOLD))]));
+                spans.push(Line::from(vec![Span::styled(
+                    line,
+                    Style::default().fg(common::color::GREEN).add_modifier(Modifier::BOLD),
+                )]));
             }
         }
         let para = Paragraph::new(spans).alignment(Alignment::Center);

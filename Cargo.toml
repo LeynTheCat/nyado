@@ -1,6 +1,6 @@
 [package]
 name = "nyado"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2024"
 authors = ["InTeaReable <leyn.the.cat@gmail.com>"]
 description = "A Rust todo-list manager with TUI, inspired by meowdo"
@@ -18,5 +18,6 @@ crossterm = "0.27"
 dirs = "5"
 chrono = "0.4"
 anyhow = "1"
+unicode-width = "0.1"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"

@@ -28,11 +28,11 @@ pub enum Command {
 pub fn key_to_command(key: KeyCode) -> Command {
     match key {
         KeyCode::Char('q') | KeyCode::Char('й') => Command::Quit,
-        KeyCode::Char('l') | KeyCode::Char('L') | KeyCode::Char('л') | KeyCode::Char('Л') => Command::Language,
-        KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('к') => Command::Up,
+        KeyCode::Char('l') | KeyCode::Char('L') | KeyCode::Char('д') | KeyCode::Char('Д') => Command::Language,
+        KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('л') => Command::Up,
         KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('о') => Command::Down,
-        KeyCode::Home | KeyCode::Char('g') | KeyCode::Char('г') => Command::Top,
-        KeyCode::End | KeyCode::Char('G') | KeyCode::Char('Г') => Command::Bottom,
+        KeyCode::Home | KeyCode::Char('g') | KeyCode::Char('п') => Command::Top,
+        KeyCode::End | KeyCode::Char('G') | KeyCode::Char('П') => Command::Bottom,
         KeyCode::PageUp => Command::PageUp,
         KeyCode::PageDown => Command::PageDown,
         KeyCode::Char('n') | KeyCode::Char('т') => Command::NewTask,

@@ -82,29 +82,6 @@ impl Storage {
         let _ = fs::copy(&self.path, &backup_path);
     }
 
-    /*
-    pub fn restore_latest_backup(&mut self) -> bool {
-        let default_dir = PathBuf::from(".");
-        let dir = self.path.parent().unwrap_or(&default_dir);
-        let stem = self.path.file_stem().unwrap().to_str().unwrap();
-        let ext = self.path.extension().and_then(|e| e.to_str()).unwrap_or("");
-        let backup_name = if ext.is_empty() {
-            format!("{}.bak.0", stem)
-        } else {
-            format!("{}.{}.bak.0", stem, ext)
-        };
-        let backup_path = dir.join(backup_name);
-        if backup_path.exists() {
-            let _ = fs::copy(&backup_path, &self.path);
-            self.load();
-            true
-        } else {
-            false
-        }
-    }
-    */
-    
-
     pub fn rebuild_tags(&mut self) {
         if !self.dirty_tags {
             return;

@@ -1,10 +1,10 @@
 mod app;
+mod commands;
+mod i18n;
+mod popup;
+mod storage;
 mod todo;
 mod ui;
-mod storage;
-mod popup;
-mod i18n;
-mod commands;
 
 use anyhow::Result;
 

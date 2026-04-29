@@ -12,7 +12,7 @@ selected_header = " 選択中 "
 tags_header = " タグ (1-9) "
 stats_header = " 統計 "
 
-help_content = "q / й – Quit\nl / л – Switch language\n↑ / k / к – Up\n↓ / j / о – Down\nHome / g / г – Top\nEnd / G / Г – Bottom\nPageUp / PageDown – Page scroll\nn / т – New task\ne / у – Edit task\nSpace – Toggle done\np / з – Pin/unpin\nt / е – Set tag\nd / в – Delete task\nD / В – Delete all\n/ – Search\nEsc – Clear filters\n1-9 – Filter by tag (most used)\nM / m – Set due date\nh / р – Help"
+help_content = "q / й – 終了\nl / L / д / Д – 言語切替\n↑ / k / л – 上へ\n↓ / j / о – 下へ\nHome / g – 先頭へ\nEnd / G – 末尾へ\nPageUp / PageDown – ページ送り\nn / т – 新規タスク\ne / у – 編集\nSpace – 完了/戻す\np / з – ピン留め\nt / е – タグ設定\nd / в – 削除\nD / В – 全削除\n/ – 検索\nEsc – フィルタ解除\n1-9 – タグでフィルタ\nM / m / ь – 期限設定\nh / р , ? – ヘルプ"
 popup_help_title = " ヘルプ "
 popup_help_hint = "Esc で閉じる"
 
@@ -43,9 +43,9 @@ due_date_cleared = "期限クリア"
 due_date_set = "期限を {} に設定"
 due_date_invalid = "日付/時刻形式が無効"
 
-statusbar_hint_wide = " n:新規  e:編集  Spc:完了  p:ピン留め  t:タグ  d:削除  D:全削除  /:検索  1-9:絞込  M:期限  h:ヘルプ  Esc:クリア  q:終了  l:言語"
-statusbar_hint_medium = " n:新規  e:編集  Spc:完了  d:削除  D:全削除  /:検索  h:ヘルプ  q:終了  l"
-statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
+statusbar_hint_wide = "n:新規  e:編集  Spc:完了  p:ピン  t:タグ  d:削除  D:全削除  /:検索  1-9:絞込  M:期限  h:ﾍﾙﾌﾟ  Esc:解除  q:終了  l:言語"
+statusbar_hint_medium = "n:新規  e:編集  Spc:完了  d:削除  D:全部  /:検索  h:ﾍﾙﾌﾟ  q:終了  l"
+statusbar_hint_narrow = "n  e  Spc  d  D  /  h  q  l"
 
 progress_label = " 残り {} "
 column_header = "  [/] #タグ      タスク"

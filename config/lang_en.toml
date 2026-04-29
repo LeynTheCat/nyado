@@ -12,7 +12,7 @@ selected_header = " SELECTED "
 tags_header = " TAGS (1-9) "
 stats_header = " STATS "
 
-help_content = "q / й – Quit\nl / л – Switch language\n↑ / k / к – Up\n↓ / j / о – Down\nHome / g / г – Top\nEnd / G / Г – Bottom\nPageUp / PageDown – Page scroll\nn / т – New task\ne / у – Edit task\nSpace – Toggle done\np / з – Pin/unpin\nt / е – Set tag\nd / в – Delete task\nD / В – Delete all\n/ – Search\nEsc – Clear filters\n1-9 – Filter by tag (most used)\nM / m – Set due date\nh / р – Help"
+help_content = "q / й – Quit\nl / L / д / Д – Switch language\n↑ / k / л – Up\n↓ / j / о – Down\nHome / g – Top\nEnd / G – Bottom\nPageUp / PageDown – Page scroll\nn / т – New task\ne / у – Edit task\nSpace – Toggle done\np / з – Pin/unpin\nt / е – Set tag\nd / в – Delete task\nD / В – Delete all\n/ – Search\nEsc – Clear filters\n1-9 – Filter by tag\nM / m / ь – Set due date\nh / р , ? – Help"
 popup_help_title = " Help "
 popup_help_hint = "Esc to close"
 

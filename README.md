@@ -129,26 +129,26 @@ Just run `nyado` from your terminal.
 
 ### Key bindings
 
-Action              | Keys (English / Russian)
---------------------|-----------------------------------------
-Quit                | q / й
-Language switch     | l / L / л / Л
-Navigate down       | j / о , ↓
-Navigate up         | k / к , ↑
-Top / Bottom        | g / г , G / Г (or Home / End)
-Page down / up      | PageDown / PageUp
-New task            | n / т
-Edit task           | e / у
-Toggle done         | Space
-Pin / unpin         | p / з
-Set tag             | t / е
-Delete task         | d / в
-Delete all tasks    | D / В (Shift + letter)
-Search              | / / .
-Filter by tag (1‑9) | 1…9 (only for existing tags)
-Clear filters       | Esc
-Set due date/time   | M / m / ь / Ь
-Show help           | h / р , ?
+| Action              | Keys (English / Russian)                          |
+|---------------------|---------------------------------------------------|
+| Quit                | q / й                                            |
+| Language switch     | l / L / д / Д                                    |
+| Navigate down       | j / о , ↓                                        |
+| Navigate up         | k / л , ↑                                        |
+| Top / Bottom        | g / п , G / П (or Home / End)                    |
+| Page down / up      | PageDown / PageUp                                |
+| New task            | n / т                                            |
+| Edit task           | e / у                                            |
+| Toggle done         | Space                                            |
+| Pin / unpin         | p / з                                            |
+| Set tag             | t / е                                            |
+| Delete task         | d / в                                            |
+| Delete all tasks    | D / В (Shift + letter)                           |
+| Search              | / / .                                            |
+| Filter by tag (1‑9) | 1…9 (only for existing tags)                    |
+| Clear filters       | Esc                                              |
+| Set due date/time   | M / m / ь / Ь                                    |
+| Show help           | h / р , ?                                        |
 
 Note: Filtering works for the first nine most‑used tags displayed in the right panel.
 Press 1‑9 to filter by that tag, press Esc to clear the filter and the search query.

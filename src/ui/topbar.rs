@@ -35,7 +35,7 @@ pub fn draw_topbar(frame: &mut Frame, area: Rect, storage: &Storage, i18n: &I18n
     let time_span = Span::styled(time_str, Style::default().bg(color::TOPBAR_BG).fg(color::TOPBAR_FG).add_modifier(Modifier::BOLD));
     let time_width = time_span.content.len() as u16;
     if width + time_width + 2 < area.width {
-        // width = area.width - time_width - 2; // не нужон
+        // not used
     }
     let line = Line::from(spans);
     let line_width = line.width() as u16;

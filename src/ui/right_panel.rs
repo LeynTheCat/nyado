@@ -1,7 +1,6 @@
-use super::common::{color, tag_color, CAT_HEIGHT};
+use super::common::{color, tag_color, draw_bongo, CAT_HEIGHT};
 use crate::i18n::I18n;
 use crate::storage::Storage;
-use super::bongo::draw_bongo;
 use crate::todo::now_secs;
 use chrono::{DateTime, Local};
 use ratatui::{
@@ -33,7 +32,7 @@ fn draw_content(
     if header_width + 4 <= content_width {
         frame.render_widget(Paragraph::new(header_line), Rect::new(content_x, y, header_width, 1));
     } else if content_width >= 4 {
-        let short = format!("[{}]", stats_header.chars().take(content_width as usize - 4).collect::<String>());
+        let short = format!("[{}]", stats_header.chars().take((content_width as usize).saturating_sub(4)).collect::<String>());
         let short_line = Line::from(Span::styled(short, Style::default().fg(color::HEADER).add_modifier(Modifier::BOLD)));
         let short_width = short_line.width() as u16;
         frame.render_widget(Paragraph::new(short_line), Rect::new(content_x, y, short_width, 1));
