@@ -1,25 +1,10 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
 use anyhow::Result;
+use crate::storage::get_config_dir;
 
 include!(concat!(env!("OUT_DIR"), "/builtin_langs.rs"));
-
-fn get_config_dir() -> PathBuf {
-    if let Some(mut dir) = dirs::config_dir() {
-        dir.push("nyado");
-        if dir.exists() && dir.is_dir() {
-            return dir;
-        }
-    }
-    if Path::new("config").exists() && Path::new("config").is_dir() {
-        return PathBuf::from("config");
-    }
-    let mut fallback = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
-    fallback.push("nyado");
-    fallback
-}
 
 #[derive(Debug, Deserialize, Clone)]
 struct Localization {
@@ -40,7 +25,12 @@ struct Localization {
     mood_one: String,
     mood_few: String,
     mood_several: String,
-    mood_many: String,
+    mood_lots: String,
+    mood_heap: String,
+    mood_pile: String,
+    mood_overwhelming: String,
+    mood_hectic: String,
+    mood_crazy: String,
     popup_new_title: String,
     popup_new_hint: String,
     popup_edit_title: String,
@@ -83,6 +73,29 @@ struct Localization {
     due_date_cleared: String,
     due_date_set: String,
     due_date_invalid: String,
+    project_menu_title: String,
+    project_menu_help_switch: String,
+    project_menu_help_create: String,
+    project_menu_help_rename: String,
+    project_menu_help_delete: String,
+    project_menu_hint_c: String,
+    project_menu_hint_r: String,
+    project_menu_hint_d: String,
+    project_menu_hint_enter: String,
+    only_one_project: String,
+    project_switched: String,
+    project_created: String,
+    project_renamed: String,
+    project_deleted: String,
+    project_invalid_name: String,
+    project_already_exists: String,
+    rename_failed: String,
+    delete_failed: String,
+    popup_delete_project_confirm: String,
+    project_create_title: String,
+    project_rename_title: String,
+    popup_esc_hint: String,
+    project_limit_reached: String,
     #[serde(flatten)]
     extra: HashMap<String, String>,
 }
@@ -107,7 +120,12 @@ impl Localization {
         fill_field!(mood_one);
         fill_field!(mood_few);
         fill_field!(mood_several);
-        fill_field!(mood_many);
+        fill_field!(mood_lots);
+        fill_field!(mood_heap);
+        fill_field!(mood_pile);
+        fill_field!(mood_overwhelming);
+        fill_field!(mood_hectic);
+        fill_field!(mood_crazy);
         fill_field!(popup_new_title);
         fill_field!(popup_new_hint);
         fill_field!(popup_edit_title);
@@ -150,6 +168,29 @@ impl Localization {
         fill_field!(due_date_cleared);
         fill_field!(due_date_set);
         fill_field!(due_date_invalid);
+        fill_field!(project_menu_title);
+        fill_field!(project_menu_help_switch);
+        fill_field!(project_menu_help_create);
+        fill_field!(project_menu_help_rename);
+        fill_field!(project_menu_help_delete);
+        fill_field!(project_menu_hint_c);
+        fill_field!(project_menu_hint_r);
+        fill_field!(project_menu_hint_d);
+        fill_field!(project_menu_hint_enter);
+        fill_field!(only_one_project);
+        fill_field!(project_switched);
+        fill_field!(project_created);
+        fill_field!(project_renamed);
+        fill_field!(project_deleted);
+        fill_field!(project_invalid_name);
+        fill_field!(project_already_exists);
+        fill_field!(rename_failed);
+        fill_field!(delete_failed);
+        fill_field!(popup_delete_project_confirm);
+        fill_field!(project_create_title);
+        fill_field!(project_rename_title);
+        fill_field!(popup_esc_hint);
+        fill_field!(project_limit_reached);
 
         if self.ui.is_empty() {
             self.ui = default.ui.clone();
@@ -299,7 +340,12 @@ impl I18n {
             "mood_one" => Some(&loc.mood_one),
             "mood_few" => Some(&loc.mood_few),
             "mood_several" => Some(&loc.mood_several),
-            "mood_many" => Some(&loc.mood_many),
+            "mood_lots" => Some(&loc.mood_lots),
+            "mood_heap" => Some(&loc.mood_heap),
+            "mood_pile" => Some(&loc.mood_pile),
+            "mood_overwhelming" => Some(&loc.mood_overwhelming),
+            "mood_hectic" => Some(&loc.mood_hectic),
+            "mood_crazy" => Some(&loc.mood_crazy),
             "popup_new_title" => Some(&loc.popup_new_title),
             "popup_new_hint" => Some(&loc.popup_new_hint),
             "popup_edit_title" => Some(&loc.popup_edit_title),
@@ -342,6 +388,29 @@ impl I18n {
             "due_date_cleared" => Some(&loc.due_date_cleared),
             "due_date_set" => Some(&loc.due_date_set),
             "due_date_invalid" => Some(&loc.due_date_invalid),
+            "project_menu_title" => Some(&loc.project_menu_title),
+            "project_menu_help_switch" => Some(&loc.project_menu_help_switch),
+            "project_menu_help_create" => Some(&loc.project_menu_help_create),
+            "project_menu_help_rename" => Some(&loc.project_menu_help_rename),
+            "project_menu_help_delete" => Some(&loc.project_menu_help_delete),
+            "project_menu_hint_c" => Some(&loc.project_menu_hint_c),
+            "project_menu_hint_r" => Some(&loc.project_menu_hint_r),
+            "project_menu_hint_d" => Some(&loc.project_menu_hint_d),
+            "project_menu_hint_enter" => Some(&loc.project_menu_hint_enter),
+            "only_one_project" => Some(&loc.only_one_project),
+            "project_switched" => Some(&loc.project_switched),
+            "project_created" => Some(&loc.project_created),
+            "project_renamed" => Some(&loc.project_renamed),
+            "project_deleted" => Some(&loc.project_deleted),
+            "project_invalid_name" => Some(&loc.project_invalid_name),
+            "project_already_exists" => Some(&loc.project_already_exists),
+            "rename_failed" => Some(&loc.rename_failed),
+            "delete_failed" => Some(&loc.delete_failed),
+            "popup_delete_project_confirm" => Some(&loc.popup_delete_project_confirm),
+            "project_create_title" => Some(&loc.project_create_title),
+            "project_rename_title" => Some(&loc.project_rename_title),
+            "popup_esc_hint" => Some(&loc.popup_esc_hint),
+            "project_limit_reached" => Some(&loc.project_limit_reached),
             _ => None,
         }
     }

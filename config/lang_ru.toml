@@ -1,7 +1,7 @@
 celebration_line1 = "  =^..^=  =^..^=  =^..^=  "
 celebration_line2 = ""
 celebration_line3 = "   *  ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ!!  *  "
-celebration_line4 = "    идеальня!! ня ня~    "
+celebration_line4 = "    идеально!! ня ня~    "
 celebration_line5 = ""
 celebration_line6 = "  =^..^=  =^..^=  =^..^=  "
 
@@ -12,16 +12,43 @@ selected_header = " ВЫБРАНО "
 tags_header = " ТЕГИ (1-9) "
 stats_header = " СТАТИСТИКА "
 
-help_content = "q / й – Выйти\nl / L / д / Д – Переключить язык\n↑ / k / л – Вверх\n↓ / j / о – Вниз\nHome / g / п – В начало\nEnd / G / П – В конец\nPageUp / PageDown – Страница\nn / т – Новая задача\ne / у – Правка\nSpace – Сделать/вернуть\np / з – Закрепить\nt / е – Тег\nd / в – Удалить\nD / В – Удалить всё\n/ – Поиск\nEsc – Сбросить фильтры\n1-9 – Фильтр по тегу\nM / m / ь – Дедлайн\nh / р , ? – Помощь"
+help_content = '''
+q / й – Выйти
+l / L / д / Д – Переключить язык
+↑ / k / л – Вверх
+↓ / j / о – Вниз
+Home / g / п – В начало
+End / G / П – В конец
+PageUp / PageDown – Страница
+n / т – Новая задача
+e / у – Правка
+Space – Сделать/вернуть
+p / з – Закрепить
+t / е – Тег
+d / в – Удалить
+D / В – Удалить всё
+/ – Поиск
+Esc – Сбросить фильтры
+1-9 – Фильтр по тегу
+M / m / ь – Дедлайн
+h / р , ? – Помощь
+f / а – Действия с проектами
+'''
+
 popup_help_title = " Помощь "
 popup_help_hint = "Esc для закрытия"
 
-mood_all_done = " всё сделано! мур~ "
-mood_empty = " добавь задачу мяу~ "
+mood_all_done = " идеально!! всё сделано~ "
+mood_empty = " добавь задачу ня~ "
 mood_one = " ещё одна! ты справишься! "
 mood_few = " почти готово, мяу~ "
 mood_several = " *мяу мяу! ты продуктивен ня~* "
-mood_many = " !!столько дел... фыр! "
+mood_lots = " ого, куча дел!! "
+mood_heap = " гора задач >_< "
+mood_pile = " уймище хлама! "
+mood_overwhelming = " просто катастрофа! передохнуть надо! "
+mood_hectic = " *паника* фррр!! "
+mood_crazy = " безумное количество! беги!! мяу!! "
 
 popup_new_title = "Новая задача"
 popup_new_hint = "что нужно сделать?"
@@ -43,7 +70,7 @@ due_date_cleared = "дедлайн сброшен"
 due_date_set = "дедлайн установлен на {}"
 due_date_invalid = "неверный формат даты/времени"
 
-statusbar_hint_wide = " n(т):нов  e(у):прав  Spc:вып  p(з):закр  t(е):тег  d(в):уд  D(В):удвсе  /(.):поиск  1-9:фильтр  M(ь):дедлайн  h(р):помощь  Esc:сброс  q(й):выход  l(д):язык"
+statusbar_hint_wide = " n(т):нов  e(у):прав  Spc:вып  p(з):закр  t(е):тег  d(в):уд  D(В):удвсе  /(.):поиск  1-9:фильтр  M(ь):дедлайн  h(р):помощь  f(а):проект  Esc:сброс  q(й):выход  l(д):язык"
 statusbar_hint_medium = " n(т):нов  e(у):прав  Spc:вып  d(в):уд  D(В):все  /(.):поиск  h(р):помощь  q(й):выход  l(д)"
 statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 
@@ -59,6 +86,30 @@ topbar_search_prefix = "/"
 topbar_date_format = "%H:%M  %a %d %b"
 title = " ЗАДАЧИ "
 right_title = " НЯДО "
+
+project_menu_title = " Проекты "
+project_menu_help_switch = "выбрать"
+project_menu_help_create = "создать"
+project_menu_help_rename = "переименовать"
+project_menu_help_delete = "удалить"
+project_menu_hint_c = "С"
+project_menu_hint_r = "Р"
+project_menu_hint_d = "У"
+project_menu_hint_enter = "Enter"
+project_create_title = "Создать проект"
+project_rename_title = "Переименовать проект"
+project_limit_reached = "Нельзя создать больше 64 проектов"
+popup_esc_hint = "Esc для отмены"
+only_one_project = "только один проект, нельзя переключиться"
+project_switched = "Переключено на проект: {}"
+project_created = "Проект '{}' создан"
+project_renamed = "Проект '{}' переименован в '{}'"
+project_deleted = "Проект '{}' удалён"
+project_invalid_name = "Недопустимое имя проекта"
+project_already_exists = "Проект уже существует"
+rename_failed = "Не удалось переименовать (имя уже существует или недопустимо)"
+delete_failed = "Не удалось удалить"
+popup_delete_project_confirm = "Удалить проект '{}'? (y/n)"
 
 [ui]
 title = " ЗАДАЧИ "

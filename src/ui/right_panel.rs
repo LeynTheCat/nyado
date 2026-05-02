@@ -206,8 +206,18 @@ fn draw_mood(frame: &mut Frame, area: Rect, pending: usize, total: usize, i18n: 
         i18n.get("mood_few")
     } else if pending <= 7 {
         i18n.get("mood_several")
+    } else if pending <= 15 {
+        i18n.get("mood_lots")
+    } else if pending <= 31 {
+        i18n.get("mood_heap")
+    } else if pending <= 63 {
+        i18n.get("mood_pile")
+    } else if pending <= 127 {
+        i18n.get("mood_overwhelming")
+    } else if pending <= 255 {
+        i18n.get("mood_hectic")
     } else {
-        i18n.get("mood_many")
+        i18n.get("mood_crazy")
     };
     let mood_span = Span::styled(mood, Style::default().fg(color::BONGO).bg(Color::Reset).add_modifier(Modifier::BOLD));
     let mood_width = mood.chars().count() as u16;

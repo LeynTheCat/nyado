@@ -2,7 +2,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{
     backend::CrosstermBackend,
     layout::Rect,
-    style::{Color, Style, Stylize},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
     Terminal,
@@ -14,6 +14,14 @@ pub enum PopupMode {
     Singleline,
     Multiline,
     Readonly,
+}
+
+pub enum ProjectAction {
+    Switch(String),
+    Create,
+    Rename(String),
+    Delete(String),
+    None,
 }
 
 fn visual_width(s: &str) -> usize {
@@ -300,7 +308,6 @@ fn popup_multiline_editable(
                         chars.remove(cursor_x - 1);
                         lines[cursor_y] = chars.into_iter().collect();
                         cursor_x -= 1;
-                        // попытка соединить строки, если текущая стала короткой
                         if cursor_y > 0 {
                             let combined = format!("{}{}", lines[cursor_y - 1], lines[cursor_y]);
                             if visual_width(&combined) <= effective_max_width {
@@ -310,7 +317,6 @@ fn popup_multiline_editable(
                                 cursor_x = lines[cursor_y].chars().count();
                             }
                         }
-                        // если текущая слишком длинная, разбиваем
                         if visual_width(&lines[cursor_y]) > effective_max_width {
                             let (first, second) = split_by_width(&lines[cursor_y], effective_max_width);
                             lines[cursor_y] = first;
@@ -448,10 +454,11 @@ fn popup_readonly(
     content: &str,
     term: &mut Terminal<CrosstermBackend<io::Stdout>>,
 ) -> io::Result<()> {
-    let lines: Vec<&str> = content.lines().collect();
+    let mut lines: Vec<&str> = content.lines().collect();
     if lines.is_empty() {
         return Ok(());
     }
+    lines.push("");
     let hint_lines: Vec<&str> = hint.lines().collect();
     let hint_height = if hint.is_empty() { 0 } else { hint_lines.len() };
     let max_content_len = lines.iter().map(|l| visual_width(l)).max().unwrap_or(0);
@@ -517,21 +524,6 @@ fn popup_readonly(
     Ok(())
 }
 
-pub fn popup(
-    title: &str,
-    hint: &str,
-    initial: &str,
-    multiline: bool,
-    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-) -> io::Result<Option<String>> {
-    let mode = if multiline {
-        PopupMode::Multiline
-    } else {
-        PopupMode::Singleline
-    };
-    popup_with_mode(title, hint, initial, mode, terminal)
-}
-
 pub fn popup_with_mode(
     title: &str,
     hint: &str,
@@ -545,6 +537,172 @@ pub fn popup_with_mode(
         PopupMode::Readonly => {
             popup_readonly(title, hint, initial, terminal)?;
             Ok(None)
+        }
+    }
+}
+
+pub fn popup_project_manager(
+    title: &str,
+    projects: &[String],
+    current: &str,
+    help_switch: &str,
+    help_create: &str,
+    help_rename: &str,
+    help_delete: &str,
+    hint_c: &str,
+    hint_r: &str,
+    hint_d: &str,
+    hint_enter: &str,
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+) -> io::Result<ProjectAction> {
+    if projects.is_empty() {
+        return Ok(ProjectAction::None);
+    }
+    let mut selected = 0;
+    let mut scroll_offset = 0;
+    let cols = 2;
+    loop {
+        let term_size = terminal.size()?;
+        let help_lines = 4;
+        let popup_width = std::cmp::min(74, term_size.width.saturating_sub(4));
+        let max_list_height = (term_size.height as usize).saturating_sub(4 + help_lines).min(projects.len());
+        let rows = (projects.len() + cols - 1) / cols;
+        let list_height = max_list_height.min(rows);
+        let popup_height = list_height + 4 + help_lines;
+        let popup_height = popup_height.min(term_size.height.saturating_sub(4) as usize);
+        let popup_x = (term_size.width.saturating_sub(popup_width)) / 2;
+        let popup_y = (term_size.height.saturating_sub(popup_height as u16)) / 2;
+        let popup_area = Rect::new(popup_x, popup_y, popup_width, popup_height as u16);
+        let help_width = 20usize;
+        let left_width = (popup_width as usize).saturating_sub(help_width + 3);
+        let col_width = left_width / cols;
+        let separator = "│";
+        if selected < scroll_offset {
+            scroll_offset = selected / cols;
+        }
+        if selected >= (scroll_offset + list_height) * cols {
+            scroll_offset = (selected / cols).saturating_sub(list_height - 1);
+        }
+        terminal.draw(|f| {
+            f.render_widget(Clear, popup_area);
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Cyan))
+                .title(Span::styled(title, Style::default().fg(Color::Cyan)));
+            let inner = block.inner(popup_area);
+            f.render_widget(block, popup_area);
+            let mut y = inner.top() + 1;
+            for row in scroll_offset..(scroll_offset + list_height) {
+                for col in 0..cols {
+                    let idx = row * cols + col;
+                    if idx >= projects.len() {
+                        continue;
+                    }
+                    let item = &projects[idx];
+                    let display = if visual_width(item) > col_width - 2 {
+                        truncate_by_width(item, col_width - 3) + "…"
+                    } else {
+                        item.clone()
+                    };
+                    let prefix = if idx == selected { "> " } else { "  " };
+                    let line = format!("{}{}", prefix, display);
+                    let style = if idx == selected {
+                        Style::default().bg(Color::Cyan).fg(Color::Black).add_modifier(Modifier::BOLD)
+                    } else if item == current {
+                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::Yellow)
+                    };
+                    let span = Span::styled(line, style);
+                    let x = inner.left() + 2 + col as u16 * (col_width as u16 + 2);
+                    f.render_widget(Paragraph::new(span), Rect::new(x, y, col_width as u16, 1));
+                }
+                y += 1;
+            }
+            let sep_x = inner.left() + left_width as u16 + 1;
+            for i in 0..(popup_height - 2) {
+                f.render_widget(
+                    Paragraph::new(Span::styled(separator, Style::default().fg(Color::Cyan))),
+                    Rect::new(sep_x, inner.top() + i as u16, 1, 1),
+                );
+            }
+            let help_x = inner.left() + left_width as u16 + 3;
+            let mut help_y = inner.top();
+            let help_switch_line = format!("{}: {}", hint_enter, help_switch);
+            let help_create_line = format!("{}: {}", hint_c, help_create);
+            let help_rename_line = format!("{}: {}", hint_r, help_rename);
+            let help_delete_line = format!("{}: {}", hint_d, help_delete);
+            f.render_widget(
+                Paragraph::new(Span::styled(help_switch_line, Style::default().fg(Color::Yellow))),
+                Rect::new(help_x, help_y, help_width as u16, 1),
+            );
+            help_y += 1;
+            f.render_widget(
+                Paragraph::new(Span::styled(help_create_line, Style::default().fg(Color::Yellow))),
+                Rect::new(help_x, help_y, help_width as u16, 1),
+            );
+            help_y += 1;
+            f.render_widget(
+                Paragraph::new(Span::styled(help_rename_line, Style::default().fg(Color::Yellow))),
+                Rect::new(help_x, help_y, help_width as u16, 1),
+            );
+            help_y += 1;
+            f.render_widget(
+                Paragraph::new(Span::styled(help_delete_line, Style::default().fg(Color::Yellow))),
+                Rect::new(help_x, help_y, help_width as u16, 1),
+            );
+        })?;
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            match key.code {
+                KeyCode::Esc => return Ok(ProjectAction::None),
+                KeyCode::Enter => {
+                    let name = projects[selected].clone();
+                    if name == current {
+                        return Ok(ProjectAction::None);
+                    }
+                    return Ok(ProjectAction::Switch(name));
+                }
+                KeyCode::Char('c') | KeyCode::Char('с') => return Ok(ProjectAction::Create),
+                KeyCode::Char('r') | KeyCode::Char('к') => {
+                    let name = projects[selected].clone();
+                    if name == "default" {
+                        continue;
+                    }
+                    return Ok(ProjectAction::Rename(name));
+                }
+                KeyCode::Char('d') | KeyCode::Char('в') => {
+                    let name = projects[selected].clone();
+                    if name == "default" {
+                        continue;
+                    }
+                    return Ok(ProjectAction::Delete(name));
+                }
+                KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('л') => {
+                    if selected >= cols {
+                        selected -= cols;
+                    }
+                }
+                KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('о') => {
+                    let next = selected + cols;
+                    if next < projects.len() {
+                        selected = next;
+                    }
+                }
+                KeyCode::Left | KeyCode::Char('h') | KeyCode::Char('р') => {
+                    if selected % cols > 0 {
+                        selected -= 1;
+                    }
+                }
+                KeyCode::Right | KeyCode::Char('l') | KeyCode::Char('д') => {
+                    if selected + 1 < projects.len() && (selected % cols) < cols - 1 {
+                        selected += 1;
+                    }
+                }
+                _ => {}
+            }
         }
     }
 }

@@ -3,27 +3,72 @@ set -e
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 print_green() { echo -e "${GREEN}$1${NC}"; }
 print_yellow() { echo -e "${YELLOW}$1${NC}"; }
+print_error() { echo -e "${RED}$1${NC}"; }
 
-if [ "$(uname -s)" != "Linux" ]; then
-    print_yellow "Warning: This script is designed for Linux. Your OS: $(uname -s)"
+detect_platform() {
+    if [ -n "$TERMUX_VERSION" ] || [ -d "/data/data/com.termux" ]; then
+        echo "termux"
+    elif [ "$(uname -s)" = "Linux" ]; then
+        echo "linux"
+    elif [ "$(uname -s)" = "Darwin" ]; then
+        echo "macos"
+    else
+        echo "unknown"
+    fi
+}
+
+PLATFORM=$(detect_platform)
+
+if [ "$PLATFORM" = "termux" ]; then
+    BIN_DIR="$PREFIX/bin"
+    CONFIG_DIR="$PREFIX/etc/nyado"
+else
+    BIN_DIR="$HOME/.local/bin"
+    CONFIG_DIR="$HOME/.config/nyado"
 fi
 
-if ! command -v curl &> /dev/null; then
-    print_yellow "curl not found. Installing..."
-    if command -v apt &> /dev/null; then
-        sudo apt update && sudo apt install -y curl
+install_pkg() {
+    local pkg="$1"
+    if command -v "$pkg" &> /dev/null; then
+        return 0
+    fi
+    print_yellow "Installing $pkg..."
+    if [ "$PLATFORM" = "termux" ]; then
+        pkg install -y "$pkg"
+    elif command -v apt &> /dev/null; then
+        if command -v sudo &> /dev/null; then
+            sudo apt update && sudo apt install -y "$pkg"
+        else
+            print_error "sudo not available. Please install $pkg manually (apt install $pkg)"
+            exit 1
+        fi
     elif command -v pacman &> /dev/null; then
-        sudo pacman -S --noconfirm curl
+        if command -v sudo &> /dev/null; then
+            sudo pacman -S --noconfirm "$pkg"
+        else
+            print_error "sudo not available. Please install $pkg manually (pacman -S $pkg)"
+            exit 1
+        fi
     elif command -v dnf &> /dev/null; then
-        sudo dnf install -y curl
+        if command -v sudo &> /dev/null; then
+            sudo dnf install -y "$pkg"
+        else
+            print_error "sudo not available. Please install $pkg manually (dnf install $pkg)"
+            exit 1
+        fi
     else
-        print_yellow "Please install curl manually and rerun."
+        print_error "Cannot install $pkg automatically. Please install it manually and rerun."
         exit 1
     fi
+}
+
+if ! command -v curl &> /dev/null; then
+    install_pkg curl
 fi
 
 REPO="LeynTheCat/nyado"
@@ -32,7 +77,7 @@ case "$ARCH" in
     x86_64)
         BIN_NAME="nyado-x86_64-unknown-linux-musl"
         ;;
-    aarch64)
+    aarch64|arm64)
         BIN_NAME="nyado-aarch64-unknown-linux-musl"
         ;;
     *)
@@ -53,9 +98,9 @@ print_green "Downloading latest nyado binary for $ARCH from $BIN_URL"
 curl -L -o nyado "$BIN_URL"
 chmod +x nyado
 
-print_green "Installing to ~/.local/bin/"
-mkdir -p "$HOME/.local/bin"
-mv nyado "$HOME/.local/bin/nyado"
+print_green "Installing to $BIN_DIR"
+mkdir -p "$BIN_DIR"
+mv nyado "$BIN_DIR/nyado"
 
 fetch_config() {
     print_yellow "Downloading config files from GitHub..."
@@ -82,37 +127,42 @@ if [ ! -d "config" ]; then
     fetch_config
 fi
 
-print_green "Removing old config files from ~/.config/nyado/"
-rm -rf "$HOME/.config/nyado"
-mkdir -p "$HOME/.config/nyado"
+print_green "Removing old config files from $CONFIG_DIR"
+rm -rf "$CONFIG_DIR"
+mkdir -p "$CONFIG_DIR"
 
-print_green "Installing fresh config files to ~/.config/nyado/"
-cp config/*.toml "$HOME/.config/nyado/"
+print_green "Installing fresh config files to $CONFIG_DIR"
+cp config/*.toml "$CONFIG_DIR/"
 
 print_green "Nyado installed successfully."
 print_green "Run 'nyado' to start."
 
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    print_yellow "Note: $HOME/.local/bin is not in your PATH."
+add_to_path() {
+    local shell_rc=""
+    local shell_name=$(basename "$SHELL")
+    if [ "$shell_name" = "bash" ]; then
+        shell_rc="$HOME/.bashrc"
+    elif [ "$shell_name" = "zsh" ]; then
+        shell_rc="$HOME/.zshrc"
+    elif [ "$shell_name" = "fish" ]; then
+        shell_rc="$HOME/.config/fish/config.fish"
+        echo "set -gx PATH \$PATH $BIN_DIR" >> "$shell_rc"
+        print_green "Added to $shell_rc (fish). Please restart your shell."
+        return
+    else
+        shell_rc="$HOME/.profile"
+    fi
+    echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$shell_rc"
+    print_green "Added to $shell_rc. Please restart your shell or run: source $shell_rc"
+}
+
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    print_yellow "$BIN_DIR is not in your PATH."
     echo -n "Do you want to add it to your shell configuration (recommended)? [y/N]: "
     read -r answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
-        SHELL_NAME=$(basename "$SHELL")
-        if [ "$SHELL_NAME" = "bash" ]; then
-            RC_FILE="$HOME/.bashrc"
-        elif [ "$SHELL_NAME" = "zsh" ]; then
-            RC_FILE="$HOME/.zshrc"
-        elif [ "$SHELL_NAME" = "fish" ]; then
-            RC_FILE="$HOME/.config/fish/config.fish"
-            echo "set -gx PATH \$PATH $HOME/.local/bin" >> "$RC_FILE"
-            print_green "Added to $RC_FILE (fish). Please restart your shell."
-            exit 0
-        else
-            RC_FILE="$HOME/.profile"
-        fi
-        echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$RC_FILE"
-        print_green "Added to $RC_FILE. Please restart your shell or run: source $RC_FILE"
+        add_to_path
     else
-        print_yellow "You can manually add '$HOME/.local/bin' to your PATH later."
+        print_yellow "You can manually add '$BIN_DIR' to your PATH later."
     fi
 fi

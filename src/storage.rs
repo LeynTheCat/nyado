@@ -3,8 +3,50 @@ use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
+use anyhow::Result;
 
 const MAX_BACKUPS: usize = 5;
+const MAX_PROJECTS: usize = 64;
+
+pub fn get_data_dir() -> PathBuf {
+    dirs::data_local_dir().unwrap_or_else(|| PathBuf::from(".")).join("nyado")
+}
+
+pub fn get_config_dir() -> PathBuf {
+    if let Some(mut dir) = dirs::config_dir() {
+        dir.push("nyado");
+        if dir.exists() && dir.is_dir() {
+            return dir;
+        }
+    }
+    if PathBuf::from("config").exists() && PathBuf::from("config").is_dir() {
+        return PathBuf::from("config");
+    }
+    let mut fallback = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
+    fallback.push("nyado");
+    fallback
+}
+
+pub fn migrate_old_todos(data_dir: &PathBuf, projects_dir: &PathBuf) -> Result<()> {
+    let old_todos = data_dir.join("todos.txt");
+    let old_default = projects_dir.join("default.txt");
+    if old_todos.exists() {
+        let should_migrate = if !old_default.exists() {
+            true
+        } else {
+            let default_size = fs::metadata(&old_default).map(|m| m.len()).unwrap_or(0);
+            default_size == 0
+        };
+        if should_migrate {
+            if let Ok(content) = fs::read_to_string(&old_todos) {
+                let mut file = File::create(&old_default)?;
+                write!(file, "{}", content)?;
+            }
+            let _ = fs::remove_file(&old_todos);
+        }
+    }
+    Ok(())
+}
 
 pub struct Storage {
     pub todos: Vec<Todo>,
@@ -12,28 +54,47 @@ pub struct Storage {
     pub filter_tag: String,
     pub tags_available: Vec<(String, usize)>,
     pub dirty_tags: bool,
-    path: PathBuf,
+    projects_dir: PathBuf,
+    pub current_project: String,
 }
 
 impl Storage {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(projects_dir: PathBuf) -> Self {
         Self {
             todos: Vec::new(),
             search: String::new(),
             filter_tag: String::new(),
             tags_available: Vec::new(),
             dirty_tags: true,
-            path,
+            projects_dir,
+            current_project: "default".to_string(),
         }
     }
 
-    pub fn load(&mut self) {
-        if !self.path.exists() {
+    fn backup_dir(&self) -> PathBuf {
+        self.projects_dir.join(".backups").join(&self.current_project)
+    }
+
+    pub fn set_project(&mut self, name: &str) -> bool {
+        let project_file = self.projects_dir.join(format!("{}.txt", name));
+        if !project_file.exists() && name != "default" {
+            return false;
+        }
+        self.current_project = name.to_string();
+        self.load_current();
+        self.rebuild_tags();
+        true
+    }
+
+    pub fn load_current(&mut self) {
+        let path = self.projects_dir.join(format!("{}.txt", self.current_project));
+        if !path.exists() {
             self.todos.clear();
             self.dirty_tags = true;
+            self.save();
             return;
         }
-        let file = File::open(&self.path).unwrap();
+        let file = File::open(&path).unwrap();
         let reader = BufReader::new(file);
         self.todos.clear();
         for line in reader.lines() {
@@ -48,38 +109,102 @@ impl Storage {
 
     pub fn save(&self) {
         self.create_backup();
-        let mut file = File::create(&self.path).unwrap();
+        let path = self.projects_dir.join(format!("{}.txt", self.current_project));
+        let mut file = File::create(&path).unwrap();
         for todo in &self.todos {
             write!(file, "{}", todo.to_line()).unwrap();
         }
     }
 
     fn create_backup(&self) {
-        if !self.path.exists() {
+        let path = self.projects_dir.join(format!("{}.txt", self.current_project));
+        if !path.exists() {
             return;
         }
-        let default_dir = PathBuf::from(".");
-        let dir = self.path.parent().unwrap_or(&default_dir);
-        let stem = self.path.file_stem().unwrap().to_str().unwrap();
-        let ext = self.path.extension().and_then(|e| e.to_str()).unwrap_or("");
-
-        let backup_name = |n: usize| {
-            if ext.is_empty() {
-                format!("{}.bak.{}", stem, n)
-            } else {
-                format!("{}.{}.bak.{}", stem, ext, n)
-            }
-        };
-
+        let backup_dir = self.backup_dir();
+        let _ = fs::create_dir_all(&backup_dir);
+        let backup_name = |n: usize| format!("{:02}.bak", n);
         for i in (0..MAX_BACKUPS-1).rev() {
-            let old = dir.join(backup_name(i));
-            let new = dir.join(backup_name(i+1));
+            let old = backup_dir.join(backup_name(i));
+            let new = backup_dir.join(backup_name(i+1));
             if old.exists() {
                 let _ = fs::rename(&old, &new);
             }
         }
-        let backup_path = dir.join(backup_name(0));
-        let _ = fs::copy(&self.path, &backup_path);
+        let backup_path = backup_dir.join(backup_name(0));
+        let _ = fs::copy(&path, &backup_path);
+    }
+
+    pub fn list_projects(&self) -> Vec<String> {
+        let mut projects = Vec::new();
+        if let Ok(entries) = fs::read_dir(&self.projects_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("txt") {
+                    if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
+                        projects.push(name.to_string());
+                    }
+                }
+            }
+        }
+        if projects.is_empty() {
+            projects.push("default".to_string());
+        }
+        projects.sort();
+        projects
+    }
+
+    pub fn create_project(&self, name: &str) -> bool {
+        let projects = self.list_projects();
+        if projects.len() >= MAX_PROJECTS {
+            return false;
+        }
+        let path = self.projects_dir.join(format!("{}.txt", name));
+        if path.exists() {
+            return false;
+        }
+        File::create(&path).ok();
+        let backup_dir = self.projects_dir.join(".backups").join(name);
+        let _ = fs::create_dir_all(&backup_dir);
+        true
+    }
+
+    pub fn delete_project(&self, name: &str) -> bool {
+        if name == "default" {
+            return false;
+        }
+        let path = self.projects_dir.join(format!("{}.txt", name));
+        if path.exists() {
+            fs::remove_file(&path).ok();
+            let backup_dir = self.projects_dir.join(".backups").join(name);
+            let _ = fs::remove_dir_all(&backup_dir);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn rename_project(&mut self, old_name: &str, new_name: &str) -> bool {
+        if old_name == "default" || new_name.is_empty() {
+            return false;
+        }
+        let old_path = self.projects_dir.join(format!("{}.txt", old_name));
+        let new_path = self.projects_dir.join(format!("{}.txt", new_name));
+        if !old_path.exists() || new_path.exists() {
+            return false;
+        }
+        fs::rename(&old_path, &new_path).ok();
+        let old_backup = self.projects_dir.join(".backups").join(old_name);
+        let new_backup = self.projects_dir.join(".backups").join(new_name);
+        if old_backup.exists() {
+            let _ = fs::rename(&old_backup, &new_backup);
+        }
+        if self.current_project == old_name {
+            self.current_project = new_name.to_string();
+            self.load_current();
+            self.rebuild_tags();
+        }
+        true
     }
 
     pub fn rebuild_tags(&mut self) {

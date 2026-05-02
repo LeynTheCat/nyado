@@ -22,6 +22,7 @@ pub enum Command {
     FilterTag(usize),
     SetDueDate,
     Help,
+    SwitchProject,
     None,
 }
 
@@ -44,13 +45,11 @@ pub fn key_to_command(key: KeyCode) -> Command {
         KeyCode::Char('D') | KeyCode::Char('В') => Command::DeleteAll,
         KeyCode::Char('/') | KeyCode::Char('.') => Command::Search,
         KeyCode::Esc => Command::ClearFilters,
-        KeyCode::Char(c) if ('1'..='9').contains(&c) => {
-            let idx = (c as usize) - ('1' as usize);
-            Command::FilterTag(idx)
-        }
+        KeyCode::Char(c) if ('1'..='9').contains(&c) => Command::FilterTag((c as usize) - ('1' as usize)),
         KeyCode::Char('M') | KeyCode::Char('m') | KeyCode::Char('ь') | KeyCode::Char('Ь') => Command::SetDueDate,
         KeyCode::Char('?') => Command::Help,
         KeyCode::Char('h') | KeyCode::Char('р') => Command::Help,
+        KeyCode::Char('f') | KeyCode::Char('а') => Command::SwitchProject,
         _ => Command::None,
     }
 }

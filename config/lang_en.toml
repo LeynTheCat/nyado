@@ -12,7 +12,29 @@ selected_header = " SELECTED "
 tags_header = " TAGS (1-9) "
 stats_header = " STATS "
 
-help_content = "q / й – Quit\nl / L / д / Д – Switch language\n↑ / k / л – Up\n↓ / j / о – Down\nHome / g – Top\nEnd / G – Bottom\nPageUp / PageDown – Page scroll\nn / т – New task\ne / у – Edit task\nSpace – Toggle done\np / з – Pin/unpin\nt / е – Set tag\nd / в – Delete task\nD / В – Delete all\n/ – Search\nEsc – Clear filters\n1-9 – Filter by tag\nM / m / ь – Set due date\nh / р , ? – Help"
+help_content = '''
+q / й – Quit
+l / L / д / Д – Switch language
+↑ / k / л – Up
+↓ / j / о – Down
+Home / g – Top
+End / G – Bottom
+PageUp / PageDown – Page scroll
+n / т – New task
+e / у – Edit task
+Space – Toggle done
+p / з – Pin/unpin
+t / е – Set tag
+d / в – Delete task
+D / В – Delete all
+/ – Search
+Esc – Clear filters
+1-9 – Filter by tag
+M / m / ь – Set due date
+h / р , ? – Help
+f / а – Project actions
+'''
+
 popup_help_title = " Help "
 popup_help_hint = "Esc to close"
 
@@ -21,7 +43,12 @@ mood_empty = " add a task nya~ "
 mood_one = " one more! you got it! "
 mood_few = " almost there, meow~ "
 mood_several = " *meow meow! you productive nya~* "
-mood_many = " !!so many tasks hiss! "
+mood_lots = " woah, lots to do!! "
+mood_heap = " heap of tasks >_< "
+mood_pile = " pile of chores! "
+mood_overwhelming = " overwhelming! need a break! "
+mood_hectic = " *panic mode* hiss!! "
+mood_crazy = " insane amount! run! nya!! "
 
 popup_new_title = "New task"
 popup_new_hint = "what needs doing?"
@@ -43,7 +70,7 @@ due_date_cleared = "due date cleared"
 due_date_set = "due date set to {}"
 due_date_invalid = "invalid date/time format"
 
-statusbar_hint_wide = " n:new  e:edit  Spc:done  p:pin  t:tag  d:del  D:del-all  /:search  1-9:filter  M:due  h:help  Esc:clear  q:quit  l:lang"
+statusbar_hint_wide = " n:new  e:edit  Spc:done  p:pin  t:tag  d:del  D:del-all  /:search  1-9:filter  M:due  h:help  f:proj  Esc:clear  q:quit  l:lang"
 statusbar_hint_medium = " n:new  e:edit  Spc:done  d:del  D:all  /:search  h:help  q:quit  l"
 statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 
@@ -59,6 +86,30 @@ topbar_search_prefix = "/"
 topbar_date_format = "%H:%M  %a %d %b"
 title = " TODO "
 right_title = " NYADO "
+
+project_menu_title = " Projects "
+project_menu_help_switch = "switch"
+project_menu_help_create = "create"
+project_menu_help_rename = "rename"
+project_menu_help_delete = "delete"
+project_menu_hint_c = "C"
+project_menu_hint_r = "R"
+project_menu_hint_d = "D"
+project_menu_hint_enter = "Enter"
+project_create_title = "Create project"
+project_rename_title = "Rename project"
+project_limit_reached = "Cannot create more than 64 projects"
+popup_esc_hint = "Esc to cancel"
+only_one_project = "only one project, cannot switch"
+project_switched = "Switched to project: {}"
+project_created = "Project '{}' created"
+project_renamed = "Project '{}' renamed to '{}'"
+project_deleted = "Project '{}' deleted"
+project_invalid_name = "Invalid project name"
+project_already_exists = "Project already exists"
+rename_failed = "Rename failed (name already exists or invalid)"
+delete_failed = "Delete failed"
+popup_delete_project_confirm = "Delete project '{}'? (y/n)"
 
 [ui]
 title = " TODO "

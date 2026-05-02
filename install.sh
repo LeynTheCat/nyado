@@ -15,6 +15,45 @@ print_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 REPO="LeynTheCat/nyado"
+PLATFORM="unknown"
+
+if [ -n "$TERMUX_VERSION" ] || [ -d "/data/data/com.termux" ]; then
+    PLATFORM="termux"
+    BIN_DIR="$PREFIX/bin"
+    CONFIG_DIR="$PREFIX/etc/nyado"
+elif [ "$(uname -s)" = "Linux" ]; then
+    PLATFORM="linux"
+elif [ "$(uname -s)" = "Darwin" ]; then
+    PLATFORM="macos"
+fi
+
+install_pkg() {
+    local pkg="$1"
+    if command -v "$pkg" &> /dev/null; then
+        return 0
+    fi
+    print_warn "Installing $pkg..."
+    if [ "$PLATFORM" = "termux" ]; then
+        pkg install -y "$pkg"
+    elif command -v apt &> /dev/null; then
+        if command -v sudo &> /dev/null; then
+            sudo apt update && sudo apt install -y "$pkg"
+        else
+            print_error "sudo not available. Please install $pkg manually (apt install $pkg)"
+            exit 1
+        fi
+    elif command -v pacman &> /dev/null; then
+        if command -v sudo &> /dev/null; then
+            sudo pacman -S --noconfirm "$pkg"
+        else
+            print_error "sudo not available. Please install $pkg manually (pacman -S $pkg)"
+            exit 1
+        fi
+    else
+        print_error "Cannot install $pkg automatically. Please install it manually."
+        exit 1
+    fi
+}
 
 check_rust() {
     if command -v cargo &> /dev/null; then
@@ -26,21 +65,28 @@ check_rust() {
 }
 
 install_rust() {
-    print_info "Installing Rust via system package manager..."
-    if command -v pacman &> /dev/null; then
-        sudo pacman -S --needed --noconfirm rustup cargo
-        rustup default stable
-    elif command -v apt-get &> /dev/null; then
-        sudo apt-get update
-        sudo apt-get install -y cargo
-    elif command -v dnf &> /dev/null; then
-        sudo dnf install -y cargo
-    elif command -v zypper &> /dev/null; then
-        sudo zypper install -y cargo
+    print_info "Installing Rust..."
+    if [ "$PLATFORM" = "termux" ]; then
+        pkg install -y rust
     else
-        print_warn "Falling back to rustup official installer."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source "$HOME/.cargo/env"
+        if command -v apt &> /dev/null; then
+            if command -v sudo &> /dev/null; then
+                sudo apt update && sudo apt install -y cargo
+            else
+                print_error "sudo not available, cannot install cargo via apt."
+                exit 1
+            fi
+        elif command -v pacman &> /dev/null; then
+            if command -v sudo &> /dev/null; then
+                sudo pacman -S --noconfirm rustup cargo
+            else
+                print_error "sudo not available, cannot install cargo via pacman."
+                exit 1
+            fi
+        else
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source "$HOME/.cargo/env"
+        fi
     fi
     if command -v cargo &> /dev/null; then
         print_info "Rust/cargo installed successfully."
@@ -95,21 +141,22 @@ install() {
         echo -n "Do you want to add it to your shell configuration (recommended)? [y/N]: "
         read -r answer
         if [[ "$answer" =~ ^[Yy]$ ]]; then
-            SHELL_NAME=$(basename "$SHELL")
-            if [ "$SHELL_NAME" = "bash" ]; then
-                RC_FILE="$HOME/.bashrc"
-            elif [ "$SHELL_NAME" = "zsh" ]; then
-                RC_FILE="$HOME/.zshrc"
-            elif [ "$SHELL_NAME" = "fish" ]; then
-                RC_FILE="$HOME/.config/fish/config.fish"
-                echo "set -gx PATH \$PATH $BIN_DIR" >> "$RC_FILE"
-                print_info "Added to $RC_FILE (fish). Please restart your shell."
-                exit 0
+            local shell_rc=""
+            local shell_name=$(basename "$SHELL")
+            if [ "$shell_name" = "bash" ]; then
+                shell_rc="$HOME/.bashrc"
+            elif [ "$shell_name" = "zsh" ]; then
+                shell_rc="$HOME/.zshrc"
+            elif [ "$shell_name" = "fish" ]; then
+                shell_rc="$HOME/.config/fish/config.fish"
+                echo "set -gx PATH \$PATH $BIN_DIR" >> "$shell_rc"
+                print_info "Added to $shell_rc (fish). Please restart your shell."
+                return
             else
-                RC_FILE="$HOME/.profile"
+                shell_rc="$HOME/.profile"
             fi
-            echo "export PATH=\"\$BIN_DIR:\$PATH\"" >> "$RC_FILE"
-            print_info "Added to $RC_FILE. Please restart your shell or run: source $RC_FILE"
+            echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$shell_rc"
+            print_info "Added to $shell_rc. Please restart your shell or run: source $shell_rc"
         else
             print_warn "You can manually add '$BIN_DIR' to your PATH later."
         fi

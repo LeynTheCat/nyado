@@ -12,16 +12,43 @@ selected_header = " 選択中 "
 tags_header = " タグ (1-9) "
 stats_header = " 統計 "
 
-help_content = "q / й – 終了\nl / L / д / Д – 言語切替\n↑ / k / л – 上へ\n↓ / j / о – 下へ\nHome / g – 先頭へ\nEnd / G – 末尾へ\nPageUp / PageDown – ページ送り\nn / т – 新規タスク\ne / у – 編集\nSpace – 完了/戻す\np / з – ピン留め\nt / е – タグ設定\nd / в – 削除\nD / В – 全削除\n/ – 検索\nEsc – フィルタ解除\n1-9 – タグでフィルタ\nM / m / ь – 期限設定\nh / р , ? – ヘルプ"
+help_content = '''
+q / й – 終了
+l / L / д / Д – 言語切替
+↑ / k / л – 上へ
+↓ / j / о – 下へ
+Home / g – 先頭へ
+End / G – 末尾へ
+PageUp / PageDown – ページ送り
+n / т – 新規タスク
+e / у – 編集
+Space – 完了/戻す
+p / з – ピン留め
+t / е – タグ設定
+d / в – 削除
+D / В – 全削除
+/ – 検索
+Esc – フィルタ解除
+1-9 – タグでフィルタ
+M / m / ь – 期限設定
+h / р , ? – ヘルプ
+f / а – プロジェクト操作
+'''
+
 popup_help_title = " ヘルプ "
 popup_help_hint = "Esc で閉じる"
 
-mood_all_done = " 完璧にゃ!! 全部終わったにゃ～ "
-mood_empty = " タスク追加にゃ～ "
-mood_one = " あと一つ！がんばれにゃ！ "
-mood_few = " もう少しにゃ～ "
-mood_several = " *にゃにゃ！生産的だにゃ～* "
-mood_many = " !!タスクたくさんにゃ！ "
+mood_all_done = " 完璧!! 全て完了～ "
+mood_empty = " タスクを追加してにゃ～ "
+mood_one = " あと一つ！あなたならできる！ "
+mood_few = " もうすぐだよ、にゃ～ "
+mood_several = " *にゃんにゃん！生産的にゃ～* "
+mood_lots = " うわ、たくさんある!! "
+mood_heap = " タスクの山 >_< "
+mood_pile = " 雑用の山！ "
+mood_overwhelming = " 圧倒される！休憩が必要！ "
+mood_hectic = " *パニック* しっしっ!! "
+mood_crazy = " 異常な量！走れ！にゃ!! "
 
 popup_new_title = "新規タスク"
 popup_new_hint = "何をする？"
@@ -43,8 +70,8 @@ due_date_cleared = "期限クリア"
 due_date_set = "期限を {} に設定"
 due_date_invalid = "日付/時刻形式が無効"
 
-statusbar_hint_wide = "n:新規  e:編集  Spc:完了  p:ピン  t:タグ  d:削除  D:全削除  /:検索  1-9:絞込  M:期限  h:ﾍﾙﾌﾟ  Esc:解除  q:終了  l:言語"
-statusbar_hint_medium = "n:新規  e:編集  Spc:完了  d:削除  D:全部  /:検索  h:ﾍﾙﾌﾟ  q:終了  l"
+statusbar_hint_wide = "n:新規  e:編集  Spc:完了  p:ピン留め  t:タグ  d:削除  D:全削除  /:検索  1-9:絞込  M:期限  h:ﾍﾙﾌﾟ  f:ﾌﾟﾛｼﾞｪｸﾄ  Esc:解除  q:終了  l:言語"
+statusbar_hint_medium = "n:新規  e:編集  Spc:完了  d:削除  D:全削除  /:検索  h:ﾍﾙﾌﾟ  q:終了  l"
 statusbar_hint_narrow = "n  e  Spc  d  D  /  h  q  l"
 
 progress_label = " 残り {} "
@@ -60,6 +87,30 @@ topbar_date_format = "%H:%M  %a %d %b"
 title = " やること "
 right_title = " ニャード "
 
+project_menu_title = " プロジェクト "
+project_menu_help_switch = "切り替え"
+project_menu_help_create = "作成"
+project_menu_help_rename = "名前変更"
+project_menu_help_delete = "削除"
+project_menu_hint_c = "C"
+project_menu_hint_r = "R"
+project_menu_hint_d = "D"
+project_menu_hint_enter = "Enter"
+project_create_title = "プロジェクト作成"
+project_rename_title = "プロジェクト名変更"
+project_limit_reached = "これ以上プロジェクトを作成できません (最大64)"
+popup_esc_hint = "Esc でキャンセル"
+only_one_project = "プロジェクトが一つしかありません"
+project_switched = "プロジェクトを '{}' に切り替えました"
+project_created = "プロジェクト '{}' を作成しました"
+project_renamed = "プロジェクト '{}' を '{}' に名前変更しました"
+project_deleted = "プロジェクト '{}' を削除しました"
+project_invalid_name = "無効なプロジェクト名"
+project_already_exists = "プロジェクトは既に存在します"
+rename_failed = "名前変更に失敗しました (既存または無効な名前)"
+delete_failed = "削除に失敗しました"
+popup_delete_project_confirm = "プロジェクト '{}' を削除しますか？ (y/n)"
+
 [ui]
 title = " やること "
 right_title = " ニャード "
@@ -67,8 +118,8 @@ topbar_title = " =^..^=  nyado "
 topbar_filter_prefix = "#"
 topbar_search_prefix = "/"
 topbar_date_format = "%H:%M  %a %d %b"
-statusbar_hint_wide = " n:新規  e:編集  Spc:完了  p:ピン留め  t:タグ  d:削除  D:全削除  /:検索  1-9:絞込  M:期限  h:ヘルプ  Esc:クリア  q:終了  l:言語"
-statusbar_hint_medium = " n:新規  e:編集  Spc:完了  d:削除  D:全削除  /:検索  h:ヘルプ  q:終了  l"
+statusbar_hint_wide = " n:新規  e:編集  Spc:完了  p:ピン留め  t:タグ  d:削除  D:全削除  /:検索  1-9:絞込  M:期限  h:ﾍﾙﾌﾟ  Esc:解除  q:終了  l:言語"
+statusbar_hint_medium = " n:新規  e:編集  Spc:完了  d:削除  D:全削除  /:検索  h:ﾍﾙﾌﾟ  q:終了  l"
 statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 progress_label = " 残り {} "
 column_header = "  [/] #タグ      タスク"

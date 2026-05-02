@@ -12,16 +12,43 @@ selected_header = " 已选择 "
 tags_header = " 标签 (1-9) "
 stats_header = " 统计信息 "
 
-help_content = "q / й – 退出\nl / L / д / Д – 切换语言\n↑ / k / л – 上\n↓ / j / о – 下\nHome / g – 顶部\nEnd / G – 底部\nPageUp / PageDown – 翻页\nn / т – 新建任务\ne / у – 编辑\nSpace – 完成/恢复\np / з – 固定/取消固定\nt / е – 设置标签\nd / в – 删除任务\nD / В – 删除全部\n/ – 搜索\nEsc – 清除过滤\n1-9 – 按标签过滤\nM / m / ь – 设置截止日期\nh / р , ? – 帮助"
+help_content = '''
+q / й – 退出
+l / L / д / Д – 切换语言
+↑ / k / л – 上
+↓ / j / о – 下
+Home / g – 顶部
+End / G – 底部
+PageUp / PageDown – 翻页
+n / т – 新建任务
+e / у – 编辑
+Space – 完成/恢复
+p / з – 固定/取消固定
+t / е – 设置标签
+d / в – 删除任务
+D / В – 删除全部
+/ – 搜索
+Esc – 清除过滤
+1-9 – 按标签过滤
+M / m / ь – 设置截止日期
+h / р , ? – 帮助
+f / а – 项目操作
+'''
+
 popup_help_title = " 帮助 "
 popup_help_hint = "Esc 关闭"
 
-mood_all_done = " 完美的！全做完啦～ "
-mood_empty = " 添加个任务吧 喵～ "
-mood_one = " 还差一个！你可以的！ "
+mood_all_done = " 完美！！全部完成～ "
+mood_empty = " 添加任务喵～ "
+mood_one = " 还差一个！你能行的！ "
 mood_few = " 快好了，喵～ "
-mood_several = " *喵喵！你太高效了 喵～* "
-mood_many = " !! 太多任务了，嘶！ "
+mood_several = " *喵喵！你真有生产力喵～* "
+mood_lots = " 哇，好多事要做！！ "
+mood_heap = " 堆积如山的任务 >_< "
+mood_pile = " 一堆杂事！ "
+mood_overwhelming = " 不堪重负！需要休息！ "
+mood_hectic = " *恐慌模式* 嘶嘶！！ "
+mood_crazy = " 疯狂的数量！快跑！喵！！ "
 
 popup_new_title = "新任务"
 popup_new_hint = "需要做什么？"
@@ -43,7 +70,7 @@ due_date_cleared = "截止日期已清除"
 due_date_set = "截止日期已设为 {}"
 due_date_invalid = "日期/时间格式无效"
 
-statusbar_hint_wide = "n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删  /:搜索  1-9:筛选  M:期限  h:帮助  Esc:清除  q:退出  l:语言"
+statusbar_hint_wide = "n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删  /:搜索  1-9:筛选  M:期限  h:帮助  f:项目  Esc:清除  q:退出  l:语言"
 statusbar_hint_medium = "n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:搜索  h:帮助  q:退出  l"
 statusbar_hint_narrow = "n  e  Spc  d  D  /  h  q  l"
 
@@ -59,6 +86,30 @@ topbar_search_prefix = "/"
 topbar_date_format = "%H:%M  %a %d %b"
 title = " 任务 "
 right_title = " 喵铛 "
+
+project_menu_title = " 项目 "
+project_menu_help_switch = "切换"
+project_menu_help_create = "创建"
+project_menu_help_rename = "重命名"
+project_menu_help_delete = "删除"
+project_menu_hint_c = "C"
+project_menu_hint_r = "R"
+project_menu_hint_d = "D"
+project_menu_hint_enter = "Enter"
+project_create_title = "创建项目"
+project_rename_title = "重命名项目"
+project_limit_reached = "最多只能创建 64 个项目"
+popup_esc_hint = "Esc 取消"
+only_one_project = "只有一个项目，无法切换"
+project_switched = "已切换到项目：{}"
+project_created = "项目 '{}' 已创建"
+project_renamed = "项目 '{}' 已重命名为 '{}'"
+project_deleted = "项目 '{}' 已删除"
+project_invalid_name = "无效的项目名称"
+project_already_exists = "项目已存在"
+rename_failed = "重命名失败（名称已存在或无效）"
+delete_failed = "删除失败"
+popup_delete_project_confirm = "删除项目 '{}'？ (y/n)"
 
 [ui]
 title = " 任务 "

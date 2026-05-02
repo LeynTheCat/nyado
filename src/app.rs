@@ -1,8 +1,7 @@
-// ============================ app.rs ============================
 use crate::commands::{key_to_command, Command};
 use crate::i18n::I18n;
-use crate::popup::{popup, popup_with_mode, PopupMode};
-use crate::storage::Storage;
+use crate::popup::{popup_with_mode, popup_project_manager, ProjectAction, PopupMode};
+use crate::storage::{Storage, get_data_dir, migrate_old_todos};
 use crate::todo::Todo;
 use crate::todo::now_secs;
 use crate::ui::{draw, draw_toosmall};
@@ -93,6 +92,7 @@ impl App {
             Command::FilterTag(idx) => self.cmd_filter_tag(idx),
             Command::SetDueDate => self.cmd_set_due_date(term),
             Command::Help => self.cmd_help(term),
+            Command::SwitchProject => self.cmd_project_menu(term),
             Command::None => {}
         }
         true
@@ -153,7 +153,13 @@ impl App {
     }
 
     fn cmd_new_task(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
-        if let Ok(Some(text)) = popup(&self.i18n.get("popup_new_title"), &self.i18n.get("popup_new_hint"), "", true, term) {
+        if let Ok(Some(text)) = popup_with_mode(
+            self.i18n.get("popup_new_title"),
+            self.i18n.get("popup_new_hint"),
+            "",
+            PopupMode::Multiline,
+            term,
+        ) {
             if self.storage.todos.len() < MAX_TODOS {
                 let tag = if self.storage.filter_tag.is_empty() { String::new() } else { self.storage.filter_tag.clone() };
                 self.storage.todos.push(Todo::new(&text, &tag));
@@ -169,7 +175,13 @@ impl App {
         if !self.visible.is_empty() {
             let idx = self.visible[self.selected];
             let old_text = self.storage.todos[idx].text.clone();
-            if let Ok(Some(new_text)) = popup(&self.i18n.get("popup_edit_title"), &self.i18n.get("popup_edit_hint"), &old_text, true, term) {
+            if let Ok(Some(new_text)) = popup_with_mode(
+                self.i18n.get("popup_edit_title"),
+                self.i18n.get("popup_edit_hint"),
+                &old_text,
+                PopupMode::Multiline,
+                term,
+            ) {
                 self.storage.todos[idx].text = new_text;
                 self.storage.save();
                 self.rebuild_visible();
@@ -213,18 +225,23 @@ impl App {
             } else {
                 self.i18n.get("popup_set_tag_hint_empty").to_string()
             };
-            if let Ok(Some(tag_raw)) = popup(&self.i18n.get("popup_set_tag_title"), &hint, "", false, term) {
+            if let Ok(Some(tag_raw)) = popup_with_mode(
+                self.i18n.get("popup_set_tag_title"),
+                &hint,
+                "",
+                PopupMode::Singleline,
+                term,
+            ) {
                 let cleaned: String = tag_raw.chars().filter(|c| !c.is_whitespace()).flat_map(|c| c.to_lowercase()).take(32).collect();
                 let idx = self.visible[self.selected];
-                if cleaned.is_empty() {
+                let msg = if cleaned.is_empty() {
                     self.storage.todos[idx].tag.clear();
-                    let msg = self.i18n.get("messages.tag_cleared").to_string();
-                    self.set_message(&msg);
+                    self.i18n.get("messages.tag_cleared").to_string()
                 } else {
                     self.storage.todos[idx].tag = cleaned;
-                    let msg = self.i18n.get("messages.tag_set").to_string();
-                    self.set_message(&msg);
-                }
+                    self.i18n.get("messages.tag_set").to_string()
+                };
+                self.set_message(&msg);
                 self.storage.dirty_tags = true;
                 self.storage.rebuild_tags();
                 self.sort_todos();
@@ -239,7 +256,7 @@ impl App {
             let text = &self.storage.todos[idx].text;
             let template = self.i18n.get("popup_delete_confirm");
             let prompt = template.replace("{}", text);
-            if let Ok(Some(ans)) = popup(&prompt, "", "", false, term) {
+            if let Ok(Some(ans)) = popup_with_mode(&prompt, "", "", PopupMode::Singleline, term) {
                 if ans == "y" || ans == "Y" {
                     self.storage.todos.remove(idx);
                     if self.selected >= self.visible.len().saturating_sub(1) && self.selected > 0 {
@@ -258,7 +275,7 @@ impl App {
         if !self.storage.todos.is_empty() {
             let template = self.i18n.get("popup_delete_all_confirm");
             let prompt = template.replace("{}", &self.storage.todos.len().to_string());
-            if let Ok(Some(ans)) = popup(&prompt, &self.i18n.get("popup_delete_all_warning"), "", false, term) {
+            if let Ok(Some(ans)) = popup_with_mode(&prompt, self.i18n.get("popup_delete_all_warning"), "", PopupMode::Singleline, term) {
                 if ans == "y" || ans == "Y" {
                     self.storage.todos.clear();
                     self.selected = 0;
@@ -272,7 +289,13 @@ impl App {
     }
 
     fn cmd_search(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
-        if let Ok(Some(q)) = popup(&self.i18n.get("popup_search_title"), &self.i18n.get("popup_search_hint"), &self.storage.search, true, term) {
+        if let Ok(Some(q)) = popup_with_mode(
+            self.i18n.get("popup_search_title"),
+            self.i18n.get("popup_search_hint"),
+            &self.storage.search,
+            PopupMode::Multiline,
+            term,
+        ) {
             self.storage.search = q;
         } else {
             self.storage.search.clear();
@@ -308,7 +331,7 @@ impl App {
             let idx = self.visible[self.selected];
             let date_title = self.i18n.get("popup_due_date_title").to_string();
             let date_hint = self.i18n.get("popup_due_date_hint").to_string();
-            if let Ok(Some(date_str)) = popup(&date_title, &date_hint, "", false, term) {
+            if let Ok(Some(date_str)) = popup_with_mode(&date_title, &date_hint, "", PopupMode::Singleline, term) {
                 let trimmed_date = date_str.trim();
                 if trimmed_date.is_empty() {
                     self.storage.todos[idx].due_date = 0;
@@ -319,7 +342,7 @@ impl App {
                     return;
                 }
                 let time_hint = self.i18n.get("popup_due_time_hint").to_string();
-                let time_res = popup("", &time_hint, "", false, term);
+                let time_res = popup_with_mode("", &time_hint, "", PopupMode::Singleline, term);
                 let time_str = match time_res {
                     Ok(Some(t)) => t.trim().to_string(),
                     Ok(None) => "".to_string(),
@@ -345,10 +368,119 @@ impl App {
     }
 
     fn cmd_help(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
-        let help_text = self.i18n.get("help_content").to_string();
+        let mut help_text = self.i18n.get("help_content").to_string();
+        if !help_text.ends_with('\n') {
+            help_text.push('\n');
+        }
         let title = self.i18n.get("popup_help_title");
         let hint = self.i18n.get("popup_help_hint");
         let _ = popup_with_mode(title, hint, &help_text, PopupMode::Readonly, term);
+    }
+
+    fn cmd_project_menu(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
+        let projects = self.storage.list_projects();
+        let current = self.storage.current_project.clone();
+        let title = self.i18n.get("project_menu_title");
+        let help_switch = self.i18n.get("project_menu_help_switch");
+        let help_create = self.i18n.get("project_menu_help_create");
+        let help_rename = self.i18n.get("project_menu_help_rename");
+        let help_delete = self.i18n.get("project_menu_help_delete");
+        let hint_c = self.i18n.get("project_menu_hint_c");
+        let hint_r = self.i18n.get("project_menu_hint_r");
+        let hint_d = self.i18n.get("project_menu_hint_d");
+        let hint_enter = self.i18n.get("project_menu_hint_enter");
+        match popup_project_manager(title, &projects, &current, help_switch, help_create, help_rename, help_delete, hint_c, hint_r, hint_d, hint_enter, term) {
+            Ok(ProjectAction::Switch(name)) => {
+                if name != self.storage.current_project {
+                    self.storage.set_project(&name);
+                    self.rebuild_visible();
+                    let msg = self.i18n.get("project_switched").replace("{}", &name);
+                    self.set_message(&msg);
+                }
+            }
+            Ok(ProjectAction::Create) => self.cmd_create_project(term),
+            Ok(ProjectAction::Rename(old)) => self.cmd_rename_project(term, &old),
+            Ok(ProjectAction::Delete(proj)) => self.cmd_delete_project(term, &proj),
+            _ => {}
+        }
+    }
+
+    fn cmd_create_project(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
+        let projects = self.storage.list_projects();
+        if projects.len() >= 64 {
+            let msg = self.i18n.get("project_limit_reached").to_string();
+            self.set_message(&msg);
+            return;
+        }
+        let title = self.i18n.get("project_create_title");
+        let hint = self.i18n.get("popup_esc_hint");
+        if let Ok(Some(name)) = popup_with_mode(title, hint, "", PopupMode::Singleline, term) {
+            if name.is_empty() || name.contains('.') || name.contains('/') || name.contains('\\') {
+                let msg = self.i18n.get("project_invalid_name").to_string();
+                self.set_message(&msg);
+                return;
+            }
+            if self.storage.create_project(&name) {
+                let msg = self.i18n.get("project_created").replace("{}", &name);
+                self.set_message(&msg);
+                self.cmd_switch_project(term, &name);
+            } else {
+                let msg = self.i18n.get("project_already_exists").to_string();
+                self.set_message(&msg);
+            }
+        }
+    }
+
+    fn cmd_rename_project(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>, old: &str) {
+        let title = self.i18n.get("project_rename_title");
+        let hint = self.i18n.get("popup_esc_hint");
+        if let Ok(Some(new)) = popup_with_mode(title, hint, old, PopupMode::Singleline, term) {
+            if new.is_empty() || new.contains('.') || new.contains('/') || new.contains('\\') {
+                let msg = self.i18n.get("project_invalid_name").to_string();
+                self.set_message(&msg);
+                return;
+            }
+            if self.storage.rename_project(old, &new) {
+                let msg = self.i18n.get("project_renamed").replace("{}", old).replace("{}", &new);
+                self.set_message(&msg);
+            } else {
+                let msg = self.i18n.get("rename_failed").to_string();
+                self.set_message(&msg);
+            }
+        }
+    }
+
+    fn cmd_delete_project(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>, proj: &str) {
+        if proj == "default" {
+            return;
+        }
+        let template = self.i18n.get("popup_delete_project_confirm");
+        let prompt = template.replace("{}", proj);
+        let hint = self.i18n.get("popup_esc_hint");
+        if let Ok(Some(ans)) = popup_with_mode(&prompt, hint, "", PopupMode::Singleline, term) {
+            if ans == "y" || ans == "Y" {
+                if self.storage.delete_project(proj) {
+                    let msg = self.i18n.get("project_deleted").replace("{}", proj);
+                    self.set_message(&msg);
+                    if self.storage.current_project == proj {
+                        self.storage.set_project("default");
+                        self.rebuild_visible();
+                    }
+                } else {
+                    let msg = self.i18n.get("delete_failed").to_string();
+                    self.set_message(&msg);
+                }
+            }
+        }
+    }
+
+    fn cmd_switch_project(&mut self, _term: &mut Terminal<CrosstermBackend<io::Stdout>>, name: &str) {
+        if name != self.storage.current_project {
+            self.storage.set_project(name);
+            self.rebuild_visible();
+            let msg = self.i18n.get("project_switched").replace("{}", name);
+            self.set_message(&msg);
+        }
     }
 
     fn check_all_done(&mut self) {
@@ -428,15 +560,23 @@ fn parse_datetime(date_str: &str, time_str: &str) -> Option<u64> {
 }
 
 pub fn run() -> anyhow::Result<()> {
-    let data_dir = dirs::data_local_dir().unwrap_or_else(|| PathBuf::from(".")).join("nyado");
+    let data_dir = get_data_dir();
     std::fs::create_dir_all(&data_dir)?;
-    let todos_path = data_dir.join("todos.txt");
+    let projects_dir = data_dir.join("projects");
+    std::fs::create_dir_all(&projects_dir)?;
 
-    let i18n = I18n::new()?;
-    let mut storage = Storage::new(todos_path);
-    storage.load();
+    migrate_old_todos(&data_dir, &projects_dir)?;
+
+    let mut storage = Storage::new(projects_dir);
+    if !storage.list_projects().contains(&"default".to_string()) {
+        storage.create_project("default");
+        storage.set_project("default");
+    } else {
+        storage.load_current();
+    }
     storage.rebuild_tags();
 
+    let i18n = I18n::new()?;
     let mut app = App::new(storage, i18n);
     App::load_saved_language(&mut app.i18n, &data_dir);
 
