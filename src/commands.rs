@@ -23,6 +23,8 @@ pub enum Command {
     SetDueDate,
     Help,
     SwitchProject,
+    PrevProject,
+    NextProject,
     None,
 }
 
@@ -50,6 +52,8 @@ pub fn key_to_command(key: KeyCode) -> Command {
         KeyCode::Char('?') => Command::Help,
         KeyCode::Char('h') | KeyCode::Char('р') => Command::Help,
         KeyCode::Char('f') | KeyCode::Char('а') => Command::SwitchProject,
+        KeyCode::Char('[') | KeyCode::Char('х') => Command::PrevProject,
+        KeyCode::Char(']') | KeyCode::Char('ъ') => Command::NextProject,
         _ => Command::None,
     }
 }

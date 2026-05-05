@@ -184,7 +184,7 @@ fn popup_singleline(
         }
     }
     let result: String = chars.into_iter().collect();
-    Ok(if result.is_empty() { None } else { Some(result) })
+    Ok(Some(result))
 }
 
 fn popup_multiline_editable(
@@ -627,7 +627,9 @@ pub fn popup_project_manager(
                 );
             }
             let help_x = inner.left() + left_width as u16 + 3;
-            let mut help_y = inner.top();
+            let total_height = popup_height - 2;
+            let help_start_y = inner.top() + ((total_height.saturating_sub(help_lines)) / 2) as u16;
+            let mut help_y = help_start_y;
             let help_switch_line = format!("{}: {}", hint_enter, help_switch);
             let help_create_line = format!("{}: {}", hint_c, help_create);
             let help_rename_line = format!("{}: {}", hint_r, help_rename);

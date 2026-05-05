@@ -1,10 +1,10 @@
-use super::common::{color, truncate_text_by_width, visual_width};
-use super::progress_bar::draw_progress_bar;
+use super::common::{color, tag_color, truncate_text_by_width, visual_width};
+use super::progress_bar::{draw_progress_bar, ProgressState};
 use crate::i18n::I18n;
 use crate::storage::Storage;
 use crate::todo::now_secs;
 use ratatui::{
-    layout::Rect,
+    layout::{Alignment, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
@@ -19,6 +19,7 @@ pub fn draw_todo_list(
     selected: usize,
     scroll_state: &mut usize,
     i18n: &I18n,
+    progress_state: &mut ProgressState,
 ) {
     let block = Block::default()
         .borders(Borders::ALL)
@@ -35,7 +36,7 @@ pub fn draw_todo_list(
         let done = storage.done_count();
         let prog_area = Rect::new(inner.left() + 1, inner.top(), inner.width - 2, 1);
         if prog_area.width > 0 {
-            draw_progress_bar(frame, prog_area, done, total);
+            draw_progress_bar(frame, prog_area, done, total, progress_state);
         }
     }
 
@@ -97,23 +98,43 @@ pub fn draw_todo_list(
         *scroll_state = total_items.saturating_sub(list_height);
     }
 
+    let remaining = if list_height < total_items && *scroll_state + list_height <= total_items {
+        total_items - (*scroll_state + list_height)
+    } else {
+        0
+    };
+    let up = i18n.get("scroll_up");
+    let down_symbol = i18n.get("scroll_down");
+    let remaining_str = format!("{}", remaining);
+    let max_width = up.chars().count()
+        .max(down_symbol.chars().count())
+        .max(remaining_str.chars().count()) as u16;
+    let x = inner.right() - max_width - 1;
+
     if *scroll_state > 0 {
-        let up = i18n.get("scroll_up");
-        let up_len = visual_width(up) as u16;
-        if up_len + 1 <= inner.width {
+        let y_up = list_start_y - 1;
+        if y_up > inner.top() + 2 {
             frame.render_widget(
-                Paragraph::new(Span::styled(up, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD))),
-                Rect::new(inner.right() - up_len, list_start_y - 1, up_len, 1),
+                Paragraph::new(Span::styled(up, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD)))
+                    .alignment(Alignment::Right),
+                Rect::new(x, y_up, max_width, 1),
             );
         }
     }
-    if *scroll_state + list_height < total_items {
-        let down = i18n.get("scroll_down");
-        let down_len = visual_width(down) as u16;
-        if down_len + 1 <= inner.width {
+
+    if remaining > 0 {
+        let y1 = inner.bottom() - 2;
+        let y2 = inner.bottom() - 1;
+        if y1 > list_start_y {
             frame.render_widget(
-                Paragraph::new(Span::styled(down, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD))),
-                Rect::new(inner.right() - down_len, inner.bottom() - 2, down_len, 1),
+                Paragraph::new(Span::styled(down_symbol, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD)))
+                    .alignment(Alignment::Right),
+                Rect::new(x, y1, max_width, 1),
+            );
+            frame.render_widget(
+                Paragraph::new(Span::styled(remaining_str, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD)))
+                    .alignment(Alignment::Right),
+                Rect::new(x, y2, max_width, 1),
             );
         }
     }
@@ -141,34 +162,46 @@ pub fn draw_todo_list(
         let pin_mark = if todo.pinned && !todo.done { '*' } else { ' ' };
         let done_mark = if todo.done { 'x' } else { ' ' };
 
-        let mut line_text = String::new();
-        line_text.push_str(&format!("{} [{}] ", pin_mark, done_mark));
+        let mut spans = Vec::new();
+        spans.push(Span::styled(format!("{} [{}] ", pin_mark, done_mark), base_style));
 
         if !todo.tag.is_empty() {
-            line_text.push_str(&format!("#{} ", todo.tag));
+            let tag_style = if is_selected {
+                base_style
+            } else {
+                Style::default().fg(tag_color(&todo.tag)).add_modifier(Modifier::BOLD)
+            };
+            spans.push(Span::styled(format!("#{} ", todo.tag), tag_style));
         }
 
         if !todo.done && todo.due_date > 0 {
             let now = now_secs();
             let overdue = todo.due_date < now;
             let due_symbol = if overdue { "‼ " } else { "~~ " };
-            line_text.push_str(due_symbol);
+            let due_style = if is_selected {
+                base_style
+            } else if overdue {
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)
+            };
+            spans.push(Span::styled(due_symbol, due_style));
         }
 
         let text_part = &todo.text;
-        let used_width = visual_width(&line_text);
-        let max_width = (inner.width as usize).saturating_sub(used_width + 2);
-        let truncated_text = if visual_width(text_part) > max_width {
-            truncate_text_by_width(text_part, max_width.saturating_sub(1)) + "…"
+        let used_width: usize = spans.iter().map(|s| s.content.len()).sum();
+        let max_width_text = (inner.width as usize).saturating_sub(used_width + 2);
+        let truncated_text = if visual_width(text_part) > max_width_text {
+            truncate_text_by_width(text_part, max_width_text.saturating_sub(1)) + "…"
         } else {
             text_part.clone()
         };
-        line_text.push_str(&truncated_text);
+        spans.push(Span::styled(truncated_text, base_style));
 
-        let line_width = visual_width(&line_text) as u16;
-        let spans = vec![Span::styled(line_text, base_style)];
+        let line = Line::from(spans);
+        let line_width = line.width() as u16;
         if y < inner.bottom() - 1 && line_width + 1 <= inner.width {
-            frame.render_widget(Paragraph::new(Line::from(spans)), Rect::new(inner.left() + 1, y, line_width, 1));
+            frame.render_widget(Paragraph::new(line), Rect::new(inner.left() + 1, y, line_width, 1));
         }
     }
 }

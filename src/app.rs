@@ -16,6 +16,7 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use crate::ui::progress_bar::ProgressState;
 
 const MAX_TODOS: usize = 2048;
 const LANG_PREF_FILE: &str = "lang_pref.txt";
@@ -29,6 +30,7 @@ pub struct App {
     message: String,
     message_ttl: u8,
     celebrate: u8,
+    progress_state: ProgressState,
 }
 
 impl App {
@@ -42,6 +44,7 @@ impl App {
             message: String::new(),
             message_ttl: 0,
             celebrate: 0,
+            progress_state: ProgressState::new(),
         };
         app.rebuild_visible();
         app
@@ -93,6 +96,8 @@ impl App {
             Command::SetDueDate => self.cmd_set_due_date(term),
             Command::Help => self.cmd_help(term),
             Command::SwitchProject => self.cmd_project_menu(term),
+            Command::PrevProject => self.cmd_prev_project(term),
+            Command::NextProject => self.cmd_next_project(term),
             Command::None => {}
         }
         true
@@ -125,6 +130,7 @@ impl App {
                 &self.i18n,
                 &self.message,
                 self.celebrate > 0,
+                &mut self.progress_state,
             );
         })?;
         Ok(())
@@ -345,8 +351,14 @@ impl App {
                 let time_res = popup_with_mode("", &time_hint, "", PopupMode::Singleline, term);
                 let time_str = match time_res {
                     Ok(Some(t)) => t.trim().to_string(),
-                    Ok(None) => "".to_string(),
-                    Err(_) => "".to_string(),
+                    Ok(None) => {
+                        return;
+                    }
+                    Err(_) => {
+                        let msg = self.i18n.get("due_date_invalid").to_string();
+                        self.set_message(&msg);
+                        return;
+                    }
                 };
                 if let Some(timestamp) = parse_datetime(trimmed_date, &time_str) {
                     self.storage.todos[idx].due_date = timestamp;
@@ -405,6 +417,43 @@ impl App {
         }
     }
 
+    fn cmd_prev_project(&mut self, _term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
+        let projects = self.storage.list_projects();
+        if projects.len() <= 1 {
+            let msg = self.i18n.get("only_one_project").to_string();
+            self.set_message(&msg);
+            return;
+        }
+        let current = self.storage.current_project.clone();
+        let pos = projects.iter().position(|p| *p == current).unwrap_or(0);
+        let new_pos = if pos == 0 { projects.len() - 1 } else { pos - 1 };
+        let new_project = projects[new_pos].clone();
+        self.switch_project(&new_project);
+    }
+
+    fn cmd_next_project(&mut self, _term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
+        let projects = self.storage.list_projects();
+        if projects.len() <= 1 {
+            let msg = self.i18n.get("only_one_project").to_string();
+            self.set_message(&msg);
+            return;
+        }
+        let current = self.storage.current_project.clone();
+        let pos = projects.iter().position(|p| *p == current).unwrap_or(0);
+        let new_pos = (pos + 1) % projects.len();
+        let new_project = projects[new_pos].clone();
+        self.switch_project(&new_project);
+    }
+
+    fn switch_project(&mut self, name: &str) {
+        if name != self.storage.current_project {
+            self.storage.set_project(name);
+            self.rebuild_visible();
+            let msg = self.i18n.get("project_switched").replace("{}", name);
+            self.set_message(&msg);
+        }
+    }
+
     fn cmd_create_project(&mut self, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
         let projects = self.storage.list_projects();
         if projects.len() >= 64 {
@@ -423,7 +472,7 @@ impl App {
             if self.storage.create_project(&name) {
                 let msg = self.i18n.get("project_created").replace("{}", &name);
                 self.set_message(&msg);
-                self.cmd_switch_project(term, &name);
+                self.switch_project(&name);
             } else {
                 let msg = self.i18n.get("project_already_exists").to_string();
                 self.set_message(&msg);
@@ -463,23 +512,13 @@ impl App {
                     let msg = self.i18n.get("project_deleted").replace("{}", proj);
                     self.set_message(&msg);
                     if self.storage.current_project == proj {
-                        self.storage.set_project("default");
-                        self.rebuild_visible();
+                        self.switch_project("default");
                     }
                 } else {
                     let msg = self.i18n.get("delete_failed").to_string();
                     self.set_message(&msg);
                 }
             }
-        }
-    }
-
-    fn cmd_switch_project(&mut self, _term: &mut Terminal<CrosstermBackend<io::Stdout>>, name: &str) {
-        if name != self.storage.current_project {
-            self.storage.set_project(name);
-            self.rebuild_visible();
-            let msg = self.i18n.get("project_switched").replace("{}", name);
-            self.set_message(&msg);
         }
     }
 

@@ -6,18 +6,32 @@ use ratatui::{
     widgets::Paragraph,
     Frame,
 };
-use std::sync::Mutex;
 
-struct ProgressState {
-    animated_filled: usize,
-    last_done: usize,
-    last_total: usize,
-    last_bar_len: usize,
+pub struct ProgressState {
+    pub animated_filled: usize,
+    pub last_done: usize,
+    pub last_total: usize,
+    pub last_bar_len: usize,
 }
 
-static PROGRESS_STATE: Mutex<Option<ProgressState>> = Mutex::new(None);
+impl ProgressState {
+    pub fn new() -> Self {
+        Self {
+            animated_filled: 0,
+            last_done: 0,
+            last_total: 0,
+            last_bar_len: 0,
+        }
+    }
+}
 
-pub fn draw_progress_bar(frame: &mut Frame, area: Rect, done: usize, total: usize) {
+pub fn draw_progress_bar(
+    frame: &mut Frame,
+    area: Rect,
+    done: usize,
+    total: usize,
+    state: &mut ProgressState,
+) {
     if total == 0 || area.width == 0 {
         return;
     }
@@ -31,14 +45,6 @@ pub fn draw_progress_bar(frame: &mut Frame, area: Rect, done: usize, total: usiz
         return;
     }
     let target_filled = (bar_len * done) / total;
-
-    let mut state_guard = PROGRESS_STATE.lock().unwrap();
-    let state = state_guard.get_or_insert_with(|| ProgressState {
-        animated_filled: target_filled,
-        last_done: done,
-        last_total: total,
-        last_bar_len: bar_len,
-    });
 
     let need_animation = (done != state.last_done) || (total != state.last_total);
     if need_animation {

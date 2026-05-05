@@ -16,6 +16,7 @@ struct Localization {
     messages: HashMap<String, String>,
     created_prefix: String,
     done_prefix: String,
+    overdue_prefix: String,
     pinned_marker: String,
     selected_header: String,
     tags_header: String,
@@ -111,6 +112,7 @@ impl Localization {
         }
         fill_field!(created_prefix);
         fill_field!(done_prefix);
+        fill_field!(overdue_prefix);
         fill_field!(pinned_marker);
         fill_field!(selected_header);
         fill_field!(tags_header);
@@ -331,6 +333,7 @@ impl I18n {
         match key {
             "created_prefix" => Some(&loc.created_prefix),
             "done_prefix" => Some(&loc.done_prefix),
+            "overdue_prefix" => Some(&loc.overdue_prefix),
             "pinned_marker" => Some(&loc.pinned_marker),
             "selected_header" => Some(&loc.selected_header),
             "tags_header" => Some(&loc.tags_header),

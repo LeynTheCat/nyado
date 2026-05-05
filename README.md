@@ -150,6 +150,8 @@ Just run `nyado` from your terminal.
 | Set due date/time   | M / m / ь / Ь                                     |
 | Show help           | h / р , ?                                         |
 | Project actions	    | f / а                                             |
+| Previous project    |	[ / х                                             |
+| Next project        | ] / ъ                                             |
 
 Note: Filtering works for the first nine most‑used tags displayed in the right panel.
 Press 1‑9 to filter by that tag, press Esc to clear the filter and the search query.
@@ -161,8 +163,28 @@ Press 1‑9 to filter by that tag, press Esc to clear the filter and the search 
 
 ## Data storage
 
-Tasks are saved in `~/.local/share/nyado/todos.txt` (Linux) or `%APPDATA%\Local\nyado\todos.txt` (Windows) in a simple pipe‑separated format.
-You can back it up or edit manually (but be careful).
+All data is stored in `~/.local/share/nyado/` (Linux) or `%APPDATA%\Local\nyado` (Windows).
+
+- Projects are saved as separate text files inside `projects/` (e.g., `projects/default.txt`).
+- Backup copies are kept in `projects/.backups/<project>/`.
+
+Each task is stored as a single line in the following pipe‑separated format:
+
+```
+<pin>|<done>|<tag>|<text>|<created_at>|<done_at>|<due_date>
+```
+
+| Field       | Description                                               |
+|-------------|-----------------------------------------------------------|
+| `<pin>`     | `P` if pinned, otherwise `-`                             |
+| `<done>`    | `x` if done, otherwise space (` `)                        |
+| `<tag>`     | Tag name, or `none` if no tag                             |
+| `<text>`    | Task text                                                 |
+| `<created_at>` | Unix timestamp (seconds) of creation                     |
+| `<done_at>` | Unix timestamp when completed, or `0`                     |
+| `<due_date>`| Unix timestamp of due date, or `0` if not set             |
+
+You may edit these files manually, but be cautious.
 
 ## Requirements
 

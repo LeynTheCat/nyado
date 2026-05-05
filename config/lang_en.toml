@@ -33,6 +33,8 @@ Esc – Clear filters
 M / m / ь – Set due date
 h / р , ? – Help
 f / а – Project actions
+[ / х – Previous project
+] / ъ – Next project
 '''
 
 popup_help_title = " Help "
@@ -63,7 +65,7 @@ popup_delete_all_warning = "!! THIS CANNOT BE UNDONE !! "
 popup_search_title = "Search"
 popup_search_hint = "type to filter~"
 popup_due_date_title = "Set due date"
-popup_due_date_hint = "Enter due date YYYY-MM-DD (Esc to cancel)"
+popup_due_date_hint = "Enter due date YYYY-MM-DD (Esc to cancel, leave empty to clear)"
 popup_due_time_hint = "Enter time HH:MM (leave empty for 00:00)"
 
 due_date_cleared = "due date cleared"
@@ -76,8 +78,6 @@ statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 
 progress_label = " {} left "
 column_header = "  [/] #tag        task"
-scroll_up = "(^)"
-scroll_down = "(v)"
 empty_list_line1 = "nothing yet! press n :3"
 empty_list_line2 = "nyado is waiting nya~"
 topbar_title = " =^..^=  nyado "
@@ -111,6 +111,11 @@ rename_failed = "Rename failed (name already exists or invalid)"
 delete_failed = "Delete failed"
 popup_delete_project_confirm = "Delete project '{}'? (y/n)"
 
+overdue_prefix = " ! overdue : "
+
+scroll_up = "▲"
+scroll_down = "▼"
+
 [ui]
 title = " TODO "
 right_title = " NYADO "
@@ -123,8 +128,6 @@ statusbar_hint_medium = " n:new  e:edit  Spc:done  d:del  D:all  /:search  h:hel
 statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 progress_label = " {} left "
 column_header = "  [/] #tag        task"
-scroll_up = "(^)"
-scroll_down = "(v)"
 
 [pending]
 prefix = " * pending : "

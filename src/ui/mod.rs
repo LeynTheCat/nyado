@@ -1,5 +1,5 @@
 mod common;
-mod progress_bar;
+pub mod progress_bar;
 mod right_panel;
 mod statusbar;
 mod todo_list;
@@ -7,6 +7,7 @@ mod topbar;
 
 use crate::i18n::I18n;
 use crate::storage::Storage;
+use progress_bar::ProgressState;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -29,6 +30,7 @@ pub fn draw(
     i18n: &I18n,
     message: &str,
     celebrate: bool,
+    progress_state: &mut ProgressState,
 ) {
     if celebrate {
         frame.render_widget(Clear, size);
@@ -72,22 +74,23 @@ pub fn draw(
     let right_width = main_area.width.saturating_sub(left_width);
 
     if right_width < 20 {
-        draw_todo_list(frame, main_area, storage, visible, selected, scroll_state, i18n);
+        draw_todo_list(frame, main_area, storage, visible, selected, scroll_state, i18n, progress_state);
     } else {
         let horiz = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Length(left_width), Constraint::Length(right_width)])
             .split(main_area);
-        draw_todo_list(frame, horiz[0], storage, visible, selected, scroll_state, i18n);
+        draw_todo_list(frame, horiz[0], storage, visible, selected, scroll_state, i18n, progress_state);
         draw_right_panel(frame, horiz[1], storage, visible, selected, i18n);
     }
 }
 
 pub fn draw_toosmall(frame: &mut Frame, size: Rect) {
     let message = vec![
-        "Terminal too small.",
-        "Minimum required: 30 columns x 10 rows.",
-        "Please resize your terminal and try again.",
+        "oh nyado needs a bigger home",
+        "",
+        "Minimum size: 30 columns x 10 rows",
+        "Please resize your terminal (or pet the cat)",
     ];
     let para = Paragraph::new(message.join("\n"))
         .alignment(Alignment::Center)

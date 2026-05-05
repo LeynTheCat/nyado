@@ -19,8 +19,9 @@ pub fn draw_topbar(frame: &mut Frame, area: Rect, storage: &Storage, i18n: &I18n
     let left_span = Span::styled(left_text, Style::default().bg(color::TOPBAR_BG).fg(color::TOPBAR_FG).add_modifier(Modifier::BOLD));
     let left_width = left_span.content.width();
 
-    let project_display = format!("[{}]", storage.current_project);
-    let center_span = Span::styled(project_display, Style::default().bg(color::TOPBAR_BG).fg(color::TOPBAR_FG).add_modifier(Modifier::BOLD));
+    let project_name = &storage.current_project;
+    let center_str = format!("< {} >", project_name);
+    let center_span = Span::styled(center_str, Style::default().bg(color::TOPBAR_BG).fg(color::TOPBAR_FG).add_modifier(Modifier::BOLD));
     let center_width = center_span.content.width();
 
     let right_text = chrono::Local::now().format(&i18n.get("topbar_date_format")).to_string();

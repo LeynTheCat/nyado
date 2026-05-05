@@ -43,30 +43,38 @@ fn draw_content(
     let done = storage.done_count();
     let pinned = storage.pinned_count();
     let total = storage.todos.len();
+    let now = now_secs();
+    let overdue = storage.todos.iter().filter(|t| !t.done && t.due_date > 0 && t.due_date < now).count();
 
     let pending_prefix = format!("{} ", i18n.get("pending.prefix"));
     let done_prefix = format!("{} ", i18n.get("done.prefix"));
     let pinned_prefix = format!("{} ", i18n.get("pinned.prefix"));
     let total_prefix = format!("{} ", i18n.get("total.prefix"));
+    let overdue_prefix = format!("{} ", i18n.get("overdue_prefix"));
 
-    let stats = vec![
-        Line::from(vec![
-            Span::styled(format!("{:<18}", pending_prefix), Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD)),
-            Span::raw(pending.to_string()),
-        ]),
-        Line::from(vec![
-            Span::styled(format!("{:<18}", done_prefix), Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)),
-            Span::raw(done.to_string()),
-        ]),
-        Line::from(vec![
-            Span::styled(format!("{:<18}", pinned_prefix), Style::default().fg(color::PIN).add_modifier(Modifier::BOLD)),
-            Span::raw(pinned.to_string()),
-        ]),
-        Line::from(vec![
-            Span::styled(format!("{:<18}", total_prefix), Style::default().dim().add_modifier(Modifier::BOLD)),
-            Span::raw(total.to_string()),
-        ]),
-    ];
+    let mut stats = Vec::new();
+    stats.push(Line::from(vec![
+        Span::styled(format!("{:<18}", pending_prefix), Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD)),
+        Span::raw(pending.to_string()),
+    ]));
+    stats.push(Line::from(vec![
+        Span::styled(format!("{:<18}", done_prefix), Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)),
+        Span::raw(done.to_string()),
+    ]));
+    stats.push(Line::from(vec![
+        Span::styled(format!("{:<18}", pinned_prefix), Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD)),
+        Span::raw(pinned.to_string()),
+    ]));
+    stats.push(Line::from(vec![
+        Span::styled(format!("{:<18}", total_prefix), Style::default().dim().add_modifier(Modifier::BOLD)),
+        Span::raw(total.to_string()),
+    ]));
+    if overdue > 0 {
+        stats.push(Line::from(vec![
+            Span::styled(format!("{:<18}", overdue_prefix), Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::raw(overdue.to_string()),
+        ]));
+    }
 
     for stat in stats {
         let stat_width = stat.width() as u16;
@@ -144,7 +152,7 @@ fn draw_content(
         if todo.pinned {
             lines.push(Line::from(Span::styled(
                 i18n.get("pinned_marker"),
-                Style::default().fg(color::PIN).add_modifier(Modifier::BOLD),
+                Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD),
             )));
         }
 
@@ -167,13 +175,13 @@ fn draw_content(
         }
 
         if todo.due_date > 0 {
-            let now = now_secs();
+            let now_sec = now_secs();
             let dt = DateTime::from_timestamp(todo.due_date as i64, 0);
             if let Some(dt) = dt {
                 let local_dt = dt.with_timezone(&Local);
                 let due_str = local_dt.format("%d %b %H:%M").to_string();
-                let overdue = todo.due_date < now;
-                let due_style = if overdue {
+                let overdue_flag = todo.due_date < now_sec;
+                let due_style = if overdue_flag {
                     Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)

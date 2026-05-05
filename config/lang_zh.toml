@@ -33,6 +33,8 @@ Esc – 清除过滤
 M / m / ь – 设置截止日期
 h / р , ? – 帮助
 f / а – 项目操作
+[ / х – 上一个项目
+] / ъ – 下一个项目
 '''
 
 popup_help_title = " 帮助 "
@@ -63,7 +65,7 @@ popup_delete_all_warning = "!! 此操作不可撤销 !! "
 popup_search_title = "搜索"
 popup_search_hint = "输入过滤文字～"
 popup_due_date_title = "设置截止日期"
-popup_due_date_hint = "输入日期 YYYY-MM-DD (Esc 取消)"
+popup_due_date_hint = "输入日期 YYYY-MM-DD (Esc 取消, 留空以清除)"
 popup_due_time_hint = "输入时间 HH:MM (留空表示 00:00)"
 
 due_date_cleared = "截止日期已清除"
@@ -76,8 +78,6 @@ statusbar_hint_narrow = "n  e  Spc  d  D  /  h  q  l"
 
 progress_label = " {} 剩余 "
 column_header = "  [/] #标签        任务 "
-scroll_up = "(^)"
-scroll_down = "(v)"
 empty_list_line1 = "暂无任务！按 n 创建 :3"
 empty_list_line2 = "nyado 在等待，喵~"
 topbar_title = " =^..^=  nyado "
@@ -111,6 +111,11 @@ rename_failed = "重命名失败（名称已存在或无效）"
 delete_failed = "删除失败"
 popup_delete_project_confirm = "删除项目 '{}'？ (y/n)"
 
+overdue_prefix = " ! 逾期 : "
+
+scroll_up = "▲"
+scroll_down = "▼"
+
 [ui]
 title = " 任务 "
 right_title = " 喵铛 "
@@ -123,8 +128,6 @@ statusbar_hint_medium = " n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:
 statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 progress_label = " {} 剩余 "
 column_header = "  [/] #标签        任务 "
-scroll_up = "(^)"
-scroll_down = "(v)"
 
 [pending]
 prefix = " * 待办 : "
