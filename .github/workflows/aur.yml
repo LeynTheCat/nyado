@@ -20,7 +20,7 @@ jobs:
           tag="${{ steps.version.outputs.tag }}"
           url_x86="https://github.com/LeynTheCat/nyado/releases/download/v$tag/nyado-x86_64-unknown-linux-musl"
           url_arm="https://github.com/LeynTheCat/nyado/releases/download/v$tag/nyado-aarch64-unknown-linux-musl"
-          for i in {1..60}; do
+          for i in {1..120}; do
             set +e
             curl -sL -f "$url_x86" -o /dev/null
             code_x86=$?
@@ -31,7 +31,7 @@ jobs:
               echo "Both files are ready"
               exit 0
             fi
-            echo "Waiting for release files... attempt $i/60 (x86: $code_x86, arm: $code_arm)"
+            echo "Waiting for release files... attempt $i/120 (x86: $code_x86, arm: $code_arm)"
             sleep 5
           done
           echo "Release files not found after 300 seconds" && exit 1

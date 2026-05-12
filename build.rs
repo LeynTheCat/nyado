@@ -18,7 +18,11 @@ fn main() {
                 if name.starts_with("lang_") && name.ends_with(".toml") {
                     let code = &name[5..name.len()-5];
                     let content = fs::read_to_string(&path).unwrap();
-                    let escaped = content.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n");
+                    let escaped = content
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"")
+                    .replace('\r', "\\r")
+                    .replace('\n', "\\n");
                     entries.push(format!("(\"{}\", \"{}\")", code, escaped));
                 }
             }
