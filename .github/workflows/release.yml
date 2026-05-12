@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,12 +31,60 @@ jobs:
           sudo cp target/${{ matrix.target }}/release/nyado nyado-${{ matrix.target }}
           sudo chown $(id -u):$(id -g) nyado-${{ matrix.target }}
 
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyado-${{ matrix.target }}
+          path: nyado-${{ matrix.target }}
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build for Windows (${{ matrix.target }})
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Copy artifact
+        run: copy target\${{ matrix.target }}\release\nyado.exe nyado-${{ matrix.target }}.exe
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyado-${{ matrix.target }}
+          path: nyado-${{ matrix.target }}.exe
+          if-no-files-found: error
+
+  create-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: ls -R artifacts
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            nyado-x86_64-unknown-linux-musl
-            nyado-aarch64-unknown-linux-musl
+            artifacts/nyado-x86_64-unknown-linux-musl/nyado-x86_64-unknown-linux-musl
+            artifacts/nyado-aarch64-unknown-linux-musl/nyado-aarch64-unknown-linux-musl
+            artifacts/nyado-x86_64-pc-windows-gnu/nyado-x86_64-pc-windows-gnu.exe
+            artifacts/nyado-x86_64-pc-windows-msvc/nyado-x86_64-pc-windows-msvc.exe
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

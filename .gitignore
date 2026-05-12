@@ -12,6 +12,7 @@
 
 .idea/
 .vscode/
+*.code-workspace
 *.swp
 *.swo
 *~
@@ -24,3 +25,9 @@ lang_pref.txt
 nyado.zip
 update_repo.sh
 flake.nix
+
+.history/
+*.log
+*.pid
+*.seed
+*.pid.lock

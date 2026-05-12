@@ -96,7 +96,20 @@ cp config/*.toml ~/.config/nyado/
 
 ### 6. Windows (unsupported, but possible)
 
-Compiling for Windows is possible – just run `cargo build --release` on a Windows machine with Rust installed. However, **I do not provide official support for Windows**. If you want to run nyado on Windows, place the `config/*.toml` files into `%APPDATA%\Local\nyado` and add the directory containing `nyado.exe` to your `PATH` environment variable.
+Compiling for Windows is possible – just run `cargo build --release` on a Windows machine with Rust installed.  
+**However, I do not provide official support for Windows.**  
+To run nyado on Windows:
+
+- Place `nyado.exe` in any folder (e.g., `C:\nyado\` or `C:\Program Files\nyado\`).
+- Add that folder to your `PATH` environment variable so you can launch `nyado` from any command prompt.
+- **Important**: Your terminal must support UTF‑8 and CJK characters.  
+  * Use either the standard `cmd.exe` with a TrueType font that supports CJK (e.g., `Consolas`, `Cascadia Code`, `Microsoft YaHei`).  
+  * Run `chcp 65001` before starting nyado to switch to UTF‑8 code page.  
+  * **ConEmu is known to have rendering issues** with nyado’s TUI; it may display garbage or crash.  
+  * For the best experience, use **Windows Terminal** or the default console with the settings above.
+
+No official support is provided – if you encounter problems, you are on your own.
+
 
 ## Update
 
@@ -121,7 +134,7 @@ Your tasks data is stored separately in `~/.local/share/nyado/` – if you want 
 rm -rf ~/.local/share/nyado
 ```
 
-For Windows, manually delete the executable and the `%APPDATA%\Local\nyado` folder.
+On Windows, simply delete the `nyado.exe` file and the `%APPDATA%\Local\nyado` folder.
 
 ## Usage
 
@@ -155,6 +168,41 @@ Just run `nyado` from your terminal.
 
 Note: Filtering works for the first nine most‑used tags displayed in the right panel.
 Press 1‑9 to filter by that tag, press Esc to clear the filter and the search query.
+
+## CLI commands
+
+nyado can also be used non‑interactively from the command line:
+```
+    nyado - a TUI todo-list manager
+
+    USAGE:
+        nyado [COMMAND] [OPTIONS]
+        nyado                (start TUI)
+
+    COMMANDS (CLI):
+        --create-project <name>          Create new project
+        --delete-project <name>          Delete project (except default)
+        --rename-project <old> <new>     Rename project
+        --list-projects                  List all projects
+        --project-name <name>            Set current project for subsequent task commands (default: default)
+        --create-task <text> [--tag <tag>]  Add a task
+        --delete-task <index>            Delete task by number (1-based)
+        --toggle-task <index>            Mark task as done/undone
+        --pin-task <index>               Pin task
+        --unpin-task <index>             Unpin task
+        --set-due <index> <YYYY-MM-DD>   Set due date
+        --list-tasks                     Show all tasks of current project
+           [--done] [--pending] [--pinned] [--tag <tag>]  Filter tasks
+        --stats                          Show task statistics (total/done/pending/pinned)
+        --done-percents                  Show percentage of completed tasks
+        --help, -h                       Show this help
+        --version, -V                    Show version
+
+    Examples:
+        nyado --create-project work
+        nyado --project-name work --create-task "Write report" --tag important
+        nyado --list-tasks --done
+```
 
 ## Localisation
 
@@ -191,7 +239,9 @@ You may edit these files manually, but be cautious.
 - Linux (x86_64 or aarch64) – any distribution with a decent terminal (unicode support).
 - For the binary installer: curl.
 - For the source installer: Rust toolchain (installed automatically if missing).
-- Windows: not officially supported, but you can compile it yourself.
+- Windows: not officially supported, but you can compile it yourself.  
+  **Terminal must support UTF‑8 and CJK fonts** – Windows Terminal or properly configured `cmd.exe` with `chcp 65001` and a TrueType font like `Cascadia Code` or `Microsoft YaHei`. ConEmu is known to have issues.
+
 
 ## Contributing
 

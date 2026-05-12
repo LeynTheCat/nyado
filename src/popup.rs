@@ -49,23 +49,59 @@ fn truncate_by_width(s: &str, max_width: usize) -> String {
     res
 }
 
-fn split_by_width(line: &str, max_width: usize) -> (String, String) {
-    let mut acc = 0;
-    let mut split_idx = 0;
-    for (i, ch) in line.chars().enumerate() {
-        let w = ch.width().unwrap_or(1);
-        if acc + w > max_width {
+fn split_line_by_width(line: &str, max_width: usize) -> Vec<String> {
+    if max_width == 0 {
+        return vec![line.to_string()];
+    }
+    let mut result = Vec::new();
+    let mut current = String::new();
+    let mut current_width = 0;
+
+    for ch in line.chars() {
+        let ch_w = ch.width().unwrap_or(1);
+        if current_width + ch_w > max_width && !current.is_empty() {
+            result.push(std::mem::take(&mut current));
+            current_width = 0;
+        }
+        current.push(ch);
+        current_width += ch_w;
+    }
+    if !current.is_empty() {
+        result.push(current);
+    }
+    if result.is_empty() {
+        result.push(String::new());
+    }
+    result
+}
+
+fn total_char_index(lines: &[String], row: usize, col: usize) -> usize {
+    let mut idx = 0;
+    for (i, line) in lines.iter().enumerate() {
+        if i < row {
+            idx += line.chars().count();
+        } else if i == row {
+            idx += col.min(line.chars().count());
             break;
         }
-        acc += w;
-        split_idx = i + 1;
     }
-    if split_idx == 0 {
-        split_idx = 1;
+    idx
+}
+
+fn find_position_from_index(lines: &[String], mut index: usize) -> (usize, usize) {
+    for (i, line) in lines.iter().enumerate() {
+        let len = line.chars().count();
+        if index <= len {
+            return (i, index);
+        }
+        index -= len;
     }
-    let first = line.chars().take(split_idx).collect();
-    let second = line.chars().skip(split_idx).collect();
-    (first, second)
+    if lines.is_empty() {
+        (0, 0)
+    } else {
+        let last = lines.len() - 1;
+        (last, lines[last].chars().count())
+    }
 }
 
 fn popup_singleline(
@@ -195,35 +231,9 @@ fn popup_multiline_editable(
     max_total_chars: usize,
     max_line_width: usize,
 ) -> io::Result<Option<String>> {
-    let mut lines: Vec<String> = initial.lines().map(|s| s.to_string()).collect();
-    if lines.is_empty() {
-        lines.push(String::new());
-    }
-    let mut cursor_x;
-    let mut cursor_y;
+    let mut flat: Vec<char> = initial.chars().collect();
+    let mut abs_pos = flat.len();
     let mut scroll_offset: usize = 0;
-
-    let total_chars = |lines: &[String]| -> usize {
-        lines.iter().map(|l| l.chars().count()).sum()
-    };
-
-    fn enforce_wrap(lines: &mut Vec<String>, max_width: usize) {
-        let mut i = 0;
-        while i < lines.len() {
-            let line = &lines[i];
-            if visual_width(line) > max_width {
-                let (first, second) = split_by_width(line, max_width);
-                lines[i] = first;
-                lines.insert(i + 1, second);
-            } else {
-                i += 1;
-            }
-        }
-    }
-
-    enforce_wrap(&mut lines, max_line_width);
-    cursor_y = 0;
-    cursor_x = 0;
 
     loop {
         let term_size = term.size()?;
@@ -235,15 +245,24 @@ fn popup_multiline_editable(
         let popup_x = (term_size.width.saturating_sub(popup_width)) / 2;
         let popup_y = (term_size.height.saturating_sub(popup_height)) / 2;
         let input_area_height = (popup_height - 7) as usize;
-        let visual_max_line_len = (popup_width - 8) as usize;
-        let effective_max_width = visual_max_line_len.min(max_line_width);
 
-        if cursor_y < scroll_offset {
-            scroll_offset = cursor_y;
+        let min_input_width = 20;
+        let raw_input_width = (popup_width as i16 - 8).max(min_input_width);
+        let visual_max_line_len = raw_input_width as usize;
+        let effective_max_width = visual_max_line_len.min(max_line_width).max(1);
+
+        let flat_str: String = flat.iter().collect();
+        let lines = split_line_by_width(&flat_str, effective_max_width);
+        let (cursor_y, cursor_x) = find_position_from_index(&lines, abs_pos);
+
+        let mut scroll = scroll_offset;
+        if cursor_y < scroll {
+            scroll = cursor_y;
         }
-        if cursor_y >= scroll_offset + input_area_height {
-            scroll_offset = cursor_y.saturating_sub(input_area_height - 1);
+        if cursor_y >= scroll + input_area_height {
+            scroll = cursor_y.saturating_sub(input_area_height - 1);
         }
+        scroll_offset = scroll;
 
         term.draw(|f| {
             let area = Rect::new(0, 0, term_size.width, term_size.height);
@@ -302,149 +321,77 @@ fn popup_multiline_editable(
             match key.code {
                 KeyCode::Esc => return Ok(None),
                 KeyCode::Backspace => {
-                    if cursor_x > 0 {
-                        let line = &lines[cursor_y];
-                        let mut chars: Vec<char> = line.chars().collect();
-                        chars.remove(cursor_x - 1);
-                        lines[cursor_y] = chars.into_iter().collect();
-                        cursor_x -= 1;
-                        if cursor_y > 0 {
-                            let combined = format!("{}{}", lines[cursor_y - 1], lines[cursor_y]);
-                            if visual_width(&combined) <= effective_max_width {
-                                lines[cursor_y - 1] = combined;
-                                lines.remove(cursor_y);
-                                cursor_y -= 1;
-                                cursor_x = lines[cursor_y].chars().count();
-                            }
-                        }
-                        if visual_width(&lines[cursor_y]) > effective_max_width {
-                            let (first, second) = split_by_width(&lines[cursor_y], effective_max_width);
-                            lines[cursor_y] = first;
-                            lines.insert(cursor_y + 1, second);
-                            cursor_y += 1;
-                            cursor_x = 0;
-                        }
-                    } else if cursor_y > 0 {
-                        let prev_line = lines[cursor_y - 1].clone();
-                        let prev_len = prev_line.chars().count();
-                        let curr_line = lines.remove(cursor_y);
-                        let new_line = format!("{}{}", prev_line, curr_line);
-                        lines[cursor_y - 1] = new_line;
-                        cursor_y -= 1;
-                        cursor_x = prev_len;
-                        if visual_width(&lines[cursor_y]) > effective_max_width {
-                            let (first, second) = split_by_width(&lines[cursor_y], effective_max_width);
-                            lines[cursor_y] = first;
-                            lines.insert(cursor_y + 1, second);
-                            cursor_y += 1;
-                            cursor_x = 0;
-                        }
+                    if abs_pos > 0 {
+                        flat.remove(abs_pos - 1);
+                        abs_pos -= 1;
                     }
                 }
                 KeyCode::Delete => {
-                    let line = &lines[cursor_y];
-                    let mut chars: Vec<char> = line.chars().collect();
-                    if cursor_x < chars.len() {
-                        chars.remove(cursor_x);
-                        lines[cursor_y] = chars.into_iter().collect();
-                        if visual_width(&lines[cursor_y]) > effective_max_width {
-                            let (first, second) = split_by_width(&lines[cursor_y], effective_max_width);
-                            lines[cursor_y] = first;
-                            lines.insert(cursor_y + 1, second);
-                            cursor_y += 1;
-                            cursor_x = 0;
-                        }
-                    } else if cursor_y + 1 < lines.len() {
-                        let next_line = lines.remove(cursor_y + 1);
-                        lines[cursor_y].push_str(&next_line);
-                        if visual_width(&lines[cursor_y]) > effective_max_width {
-                            let (first, second) = split_by_width(&lines[cursor_y], effective_max_width);
-                            lines[cursor_y] = first;
-                            lines.insert(cursor_y + 1, second);
-                            cursor_y += 1;
-                            cursor_x = 0;
-                        }
-                    }
-                }
-                KeyCode::Left => {
-                    if cursor_x > 0 {
-                        cursor_x -= 1;
-                    } else if cursor_y > 0 {
-                        cursor_y -= 1;
-                        cursor_x = lines[cursor_y].chars().count();
-                    }
-                }
-                KeyCode::Right => {
-                    let line_len = lines[cursor_y].chars().count();
-                    if cursor_x < line_len {
-                        cursor_x += 1;
-                    } else if cursor_y + 1 < lines.len() {
-                        cursor_y += 1;
-                        cursor_x = 0;
-                    }
-                }
-                KeyCode::Up => {
-                    if cursor_y > 0 {
-                        cursor_y -= 1;
-                        let new_len = lines[cursor_y].chars().count();
-                        if cursor_x > new_len {
-                            cursor_x = new_len;
-                        }
-                    }
-                }
-                KeyCode::Down => {
-                    if cursor_y + 1 < lines.len() {
-                        cursor_y += 1;
-                        let new_len = lines[cursor_y].chars().count();
-                        if cursor_x > new_len {
-                            cursor_x = new_len;
-                        }
-                    }
-                }
-                KeyCode::Home => cursor_x = 0,
-                KeyCode::End => cursor_x = lines[cursor_y].chars().count(),
-                KeyCode::PageUp => {
-                    cursor_y = cursor_y.saturating_sub(input_area_height);
-                    let new_len = lines[cursor_y].chars().count();
-                    if cursor_x > new_len {
-                        cursor_x = new_len;
-                    }
-                }
-                KeyCode::PageDown => {
-                    cursor_y = (cursor_y + input_area_height).min(lines.len() - 1);
-                    let new_len = lines[cursor_y].chars().count();
-                    if cursor_x > new_len {
-                        cursor_x = new_len;
+                    if abs_pos < flat.len() {
+                        flat.remove(abs_pos);
                     }
                 }
                 KeyCode::Char(c) => {
-                    if total_chars(&lines) < max_total_chars {
-                        let line = &lines[cursor_y];
-                        let mut chars: Vec<char> = line.chars().collect();
-                        chars.insert(cursor_x, c);
-                        lines[cursor_y] = chars.into_iter().collect();
-                        cursor_x += 1;
-                        if visual_width(&lines[cursor_y]) > effective_max_width {
-                            let (first, second) = split_by_width(&lines[cursor_y], effective_max_width);
-                            lines[cursor_y] = first;
-                            lines.insert(cursor_y + 1, second);
-                            cursor_y += 1;
-                            cursor_x = 1;
-                        }
+                    if flat.len() < max_total_chars {
+                        flat.insert(abs_pos, c);
+                        abs_pos += 1;
                     }
                 }
+                KeyCode::Left => {
+                    if abs_pos > 0 {
+                        abs_pos -= 1;
+                    }
+                }
+                KeyCode::Right => {
+                    if abs_pos < flat.len() {
+                        abs_pos += 1;
+                    }
+                }
+                KeyCode::Up => {
+                    let flat_str: String = flat.iter().collect();
+                    let lines = split_line_by_width(&flat_str, effective_max_width);
+                    let (cy, cx) = find_position_from_index(&lines, abs_pos);
+                    if cy > 0 {
+                        let new_cy = cy - 1;
+                        let new_cx = cx.min(lines[new_cy].chars().count());
+                        abs_pos = total_char_index(&lines, new_cy, new_cx);
+                    }
+                }
+                KeyCode::Down => {
+                    let flat_str: String = flat.iter().collect();
+                    let lines = split_line_by_width(&flat_str, effective_max_width);
+                    let (cy, cx) = find_position_from_index(&lines, abs_pos);
+                    if cy + 1 < lines.len() {
+                        let new_cy = cy + 1;
+                        let new_cx = cx.min(lines[new_cy].chars().count());
+                        abs_pos = total_char_index(&lines, new_cy, new_cx);
+                    }
+                }
+                KeyCode::PageUp => {
+                    let flat_str: String = flat.iter().collect();
+                    let lines = split_line_by_width(&flat_str, effective_max_width);
+                    let (cy, cx) = find_position_from_index(&lines, abs_pos);
+                    let step = input_area_height;
+                    let new_cy = cy.saturating_sub(step);
+                    let new_cx = cx.min(lines[new_cy].chars().count());
+                    abs_pos = total_char_index(&lines, new_cy, new_cx);
+                }
+                KeyCode::PageDown => {
+                    let flat_str: String = flat.iter().collect();
+                    let lines = split_line_by_width(&flat_str, effective_max_width);
+                    let (cy, cx) = find_position_from_index(&lines, abs_pos);
+                    let step = input_area_height;
+                    let new_cy = (cy + step).min(lines.len() - 1);
+                    let new_cx = cx.min(lines[new_cy].chars().count());
+                    abs_pos = total_char_index(&lines, new_cy, new_cx);
+                }
+                KeyCode::Home => abs_pos = 0,
+                KeyCode::End => abs_pos = flat.len(),
                 _ => {}
-            }
-            if cursor_y >= lines.len() {
-                cursor_y = lines.len().saturating_sub(1);
-            }
-            let line_len = lines[cursor_y].chars().count();
-            if cursor_x > line_len {
-                cursor_x = line_len;
             }
         }
     }
-    let result = lines.join("\n");
+    let result: String = flat.iter().collect();
     Ok(if result.is_empty() { None } else { Some(result) })
 }
 

@@ -20,6 +20,8 @@ pub fn draw_todo_list(
     scroll_state: &mut usize,
     i18n: &I18n,
     progress_state: &mut ProgressState,
+    _search_mode: bool,
+    _search_buffer: &str,
 ) {
     let block = Block::default()
         .borders(Borders::ALL)
