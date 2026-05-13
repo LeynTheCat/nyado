@@ -24,7 +24,6 @@ lang_pref.txt
 *.txt
 nyado.zip
 update_repo.sh
-flake.nix
 
 .history/
 *.log
