@@ -12,15 +12,17 @@ provides=("nyado")
 conflicts=("nyado")
 options=(!strip)
 
+_srcname="nyado-${CARCH}-unknown-linux-musl-v${pkgver}"
+
 if [[ "$CARCH" == "x86_64" ]]; then
-    source=("https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-x86_64-unknown-linux-musl")
+    source=("${_srcname}::https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-x86_64-unknown-linux-musl")
     sha256sums=('PLACEHOLDER_X86_64')
 elif [[ "$CARCH" == "aarch64" ]]; then
-    source=("https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-aarch64-unknown-linux-musl")
+    source=("${_srcname}::https://github.com/LeynTheCat/nyado/releases/download/v$pkgver/nyado-aarch64-unknown-linux-musl")
     sha256sums=('PLACEHOLDER_AARCH64')
 fi
 
 package() {
     cd "$srcdir"
-    install -Dm755 "${source##*/}" "$pkgdir/usr/bin/nyado"
+    install -Dm755 "$_srcname" "$pkgdir/usr/bin/nyado"
 }
