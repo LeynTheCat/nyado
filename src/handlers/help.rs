@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::popup::{popup_with_mode, PopupMode};
+use crate::popup::{popup_with_mode_layout, PopupMode, PopupReadonlyLayout};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use std::io;
@@ -11,5 +11,12 @@ pub fn show(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
     }
     let title = app.i18n.get("popup_help_title");
     let hint = app.i18n.get("popup_help_hint");
-    let _ = popup_with_mode(title, hint, &help_text, PopupMode::Readonly, term);
+    let _ = popup_with_mode_layout(
+        title,
+        hint,
+        &help_text,
+        PopupMode::Readonly,
+        term,
+        PopupReadonlyLayout::TwoColumns,
+    );
 }

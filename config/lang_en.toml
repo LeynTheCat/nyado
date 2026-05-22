@@ -88,6 +88,7 @@ title = " TODO "
 right_title = " NYADO "
 
 project_menu_title = " Projects "
+project_menu_help_title = " Help "
 project_menu_help_switch = "switch"
 project_menu_help_create = "create"
 project_menu_help_rename = "rename"

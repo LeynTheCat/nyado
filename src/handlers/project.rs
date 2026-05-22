@@ -12,6 +12,7 @@ pub fn menu(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
     let help_create = app.i18n.get("project_menu_help_create");
     let help_rename = app.i18n.get("project_menu_help_rename");
     let help_delete = app.i18n.get("project_menu_help_delete");
+    let help_title = app.i18n.get("project_menu_help_title");
     let hint_c = app.i18n.get("project_menu_hint_c");
     let hint_r = app.i18n.get("project_menu_hint_r");
     let hint_d = app.i18n.get("project_menu_hint_d");
@@ -19,6 +20,7 @@ pub fn menu(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
     match popup_project_manager(
         title, &projects, &current,
         help_switch, help_create, help_rename, help_delete,
+        help_title,
         hint_c, hint_r, hint_d, hint_enter,
         term,
     ) {

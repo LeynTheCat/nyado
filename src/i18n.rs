@@ -75,6 +75,7 @@ struct Localization {
     due_date_set: String,
     due_date_invalid: String,
     project_menu_title: String,
+    project_menu_help_title: String,
     project_menu_help_switch: String,
     project_menu_help_create: String,
     project_menu_help_rename: String,
@@ -171,6 +172,7 @@ impl Localization {
         fill_field!(due_date_set);
         fill_field!(due_date_invalid);
         fill_field!(project_menu_title);
+        fill_field!(project_menu_help_title);
         fill_field!(project_menu_help_switch);
         fill_field!(project_menu_help_create);
         fill_field!(project_menu_help_rename);
@@ -392,6 +394,7 @@ impl I18n {
             "due_date_set" => Some(&loc.due_date_set),
             "due_date_invalid" => Some(&loc.due_date_invalid),
             "project_menu_title" => Some(&loc.project_menu_title),
+            "project_menu_help_title" => Some(&loc.project_menu_help_title),
             "project_menu_help_switch" => Some(&loc.project_menu_help_switch),
             "project_menu_help_create" => Some(&loc.project_menu_help_create),
             "project_menu_help_rename" => Some(&loc.project_menu_help_rename),

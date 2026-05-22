@@ -88,6 +88,7 @@ title = " やること "
 right_title = " ニャード "
 
 project_menu_title = " プロジェクト "
+project_menu_help_title = " ヘルプ "
 project_menu_help_switch = "切り替え"
 project_menu_help_create = "作成"
 project_menu_help_rename = "名前変更"

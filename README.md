@@ -2,7 +2,7 @@
 
 ![Rust Version](https://img.shields.io/badge/rust-1.70+-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20(unofficial)%20%7C%20x86__64%20%7C%20aarch64-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20-lightgrey)
 ![TUI](https://img.shields.io/badge/UI-ratatui-purple)
 ![i18n](https://img.shields.io/badge/i18n-multilingual-brightgreen)
 ![Features](https://img.shields.io/badge/features-tags%20%7C%20search%20%7C%20due%20dates-yellow)
@@ -94,21 +94,36 @@ mkdir -p ~/.config/nyado
 cp config/*.toml ~/.config/nyado/
 ```
 
-### 6. Windows (unsupported, but possible)
+### 6. Windows
 
 Compiling for Windows is possible – just run `cargo build --release` on a Windows machine with Rust installed.  
 **However, I do not provide official support for Windows.**  
-To run nyado on Windows:
+
+To make installation easier, two batch scripts are provided in the repository:
+
+- `nyado_install.bat`   – downloads the latest release from GitHub, installs `nyado.exe` into `%LOCALAPPDATA%\nyado\bin`, and adds it to your user `PATH`.
+- `nyado_uninstall.bat` – removes the binary directory and cleans the `PATH` entry.
+
+**Quick setup (recommended):**
+
+1. Download `nyado_install.bat` and run it as a normal user (no admin rights needed).
+2. Open a **new** Command Prompt or PowerShell window.
+3. Type `nyado` – the TUI should start.
+
+**Manual setup (if you prefer):**
 
 - Place `nyado.exe` in any folder (e.g., `C:\nyado\` or `C:\Program Files\nyado\`).
-- Add that folder to your `PATH` environment variable so you can launch `nyado` from any command prompt.
-- **Important**: Your terminal must support UTF‑8 and CJK characters.  
-  * Use either the standard `cmd.exe` with a TrueType font that supports CJK (e.g., `Consolas`, `Cascadia Code`, `Microsoft YaHei`).  
-  * Run `chcp 65001` before starting nyado to switch to UTF‑8 code page.  
-  * **ConEmu is known to have rendering issues** with nyado’s TUI; it may display garbage or crash.  
-  * For the best experience, use **Windows Terminal** or the default console with the settings above.
+- Add that folder to your `PATH` environment variable.
 
-No official support is provided – if you encounter problems, you are on your own.
+**Important notes for all Windows users:**
+
+- Your terminal must support UTF‑8 and CJK characters.
+  - Use either standard `cmd.exe` with a TrueType font that supports CJK (e.g., `Consolas`, `Cascadia Code`, `Microsoft YaHei`).
+  - Run `chcp 65001` before starting nyado to switch to the UTF‑8 code page.
+- **ConEmu is known to have rendering issues** with nyado’s TUI; it may display garbage or crash.
+- For the best experience, use **Windows Terminal** or the default console with the above settings.
+
+No official support is provided – but the batch scripts make installation trivial.
 
 
 ## Update
@@ -134,7 +149,7 @@ Your tasks data is stored separately in `~/.local/share/nyado/` – if you want 
 rm -rf ~/.local/share/nyado
 ```
 
-On Windows, simply delete the `nyado.exe` file and the `%APPDATA%\Local\nyado` folder.
+On Windows, simply delete the `nyado.exe` file and the `%APPDATA%\Local\nyado` folder. (if you installed nyado via nyado_install.bat you can use nyado_uninstall.bat)
 
 ## Usage
 
@@ -173,35 +188,35 @@ Press 1‑9 to filter by that tag, press Esc to clear the filter and the search 
 
 nyado can also be used non‑interactively from the command line:
 ```
-    nyado - a TUI todo-list manager
+  nyado - a TUI todo-list manager
 
-    USAGE:
-        nyado [COMMAND] [OPTIONS]
-        nyado                (start TUI)
+  USAGE:
+      nyado [COMMAND] [OPTIONS]
+      nyado                (start TUI)
 
-    COMMANDS (CLI):
-        --create-project <name>          Create new project
-        --delete-project <name>          Delete project (except default)
-        --rename-project <old> <new>     Rename project
-        --list-projects                  List all projects
-        --project-name <name>            Set current project for subsequent task commands (default: default)
-        --create-task <text> [--tag <tag>]  Add a task
-        --delete-task <index>            Delete task by number (1-based)
-        --toggle-task <index>            Mark task as done/undone
-        --pin-task <index>               Pin task
-        --unpin-task <index>             Unpin task
-        --set-due <index> <YYYY-MM-DD>   Set due date
-        --list-tasks                     Show all tasks of current project
-           [--done] [--pending] [--pinned] [--tag <tag>]  Filter tasks
-        --stats                          Show task statistics (total/done/pending/pinned)
-        --done-percents                  Show percentage of completed tasks
-        --help, -h                       Show this help
-        --version, -V                    Show version
+  COMMANDS (CLI):
+      --create-project <name>          Create new project
+      --delete-project <name>          Delete project (except default)
+      --rename-project <old> <new>     Rename project
+      --list-projects                  List all projects
+      --project-name <name>            Set current project for subsequent task commands (default: default)
+      --create-task <text> [--tag <tag>]  Add a task
+      --delete-task <index>            Delete task by number (1-based)
+      --toggle-task <index>            Mark task as done/undone
+      --pin-task <index>               Pin task
+      --unpin-task <index>             Unpin task
+      --set-due <index> <YYYY-MM-DD>   Set due date
+      --list-tasks                     Show all tasks of current project
+          [--done] [--pending] [--pinned] [--tag <tag>]  Filter tasks
+      --stats                          Show task statistics (total/done/pending/pinned)
+      --done-percents                  Show percentage of completed tasks
+      --help, -h                       Show this help
+      --version, -V                    Show version
 
-    Examples:
-        nyado --create-project work
-        nyado --project-name work --create-task "Write report" --tag important
-        nyado --list-tasks --done
+  Examples:
+      nyado --create-project work
+      nyado --project-name work --create-task "Write report" --tag important
+      nyado --list-tasks --done
 ```
 
 ## Localisation
@@ -236,11 +251,15 @@ You may edit these files manually, but be cautious.
 
 ## Requirements
 
-- Linux (x86_64 or aarch64) – any distribution with a decent terminal (unicode support).
-- For the binary installer: curl.
-- For the source installer: Rust toolchain (installed automatically if missing).
-- Windows: not officially supported, but you can compile it yourself.  
-  **Terminal must support UTF‑8 and CJK fonts** – Windows Terminal or properly configured `cmd.exe` with `chcp 65001` and a TrueType font like `Cascadia Code` or `Microsoft YaHei`. ConEmu is known to have issues.
+- **Linux** (x86_64 or aarch64) – any distribution with a decent terminal (unicode support).
+  - For the binary installer: `curl`.
+  - For the source installer: Rust toolchain (installed automatically if missing).
+
+- **Windows**
+  - `curl` – must be available in PATH (the installer script checks for it).
+  - A terminal that supports UTF‑8 and CJK fonts:
+    - **Recommended:** Windows Terminal
+    - **Alternative:** `cmd.exe` with a TrueType font (e.g., `Cascadia Code`, `Consolas`, `Microsoft YaHei`) and run `chcp 65001` before launching nyado.
 
 
 ## Contributing

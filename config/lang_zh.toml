@@ -88,6 +88,7 @@ title = " 任务 "
 right_title = " 喵铛 "
 
 project_menu_title = " 项目 "
+project_menu_help_title = " 帮助 "
 project_menu_help_switch = "切换"
 project_menu_help_create = "创建"
 project_menu_help_rename = "重命名"
