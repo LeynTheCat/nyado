@@ -1,23 +1,26 @@
 use crate::commands::key_to_command;
 use crate::commands::Command;
+use crate::config::config;
 use crate::handlers::*;
 use crate::i18n::I18n;
 use crate::storage::{get_data_dir, migrate_old_todos, Storage};
 use crate::ui::progress_bar::ProgressState;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, MouseEvent, MouseEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use ratatui::layout::Rect;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
+use std::time::Duration;
 
 pub(crate) struct App {
     pub storage: Storage,
-    pub visible: Vec<usize>,
+    pub visible: Vec<(u64, usize)>,
     pub selected: usize,
     pub list_top: usize,
     pub i18n: I18n,
@@ -27,6 +30,9 @@ pub(crate) struct App {
     pub progress_state: ProgressState,
     pub search_mode: bool,
     pub search_buffer: String,
+    pub list_area: Option<Rect>,
+    pub mouse_dragging: bool,
+    pub line_to_task: Vec<usize>,
 }
 
 impl App {
@@ -43,32 +49,28 @@ impl App {
             progress_state: ProgressState::new(),
             search_mode: false,
             search_buffer: String::new(),
+            list_area: None,
+            mouse_dragging: false,
+            line_to_task: Vec::new(),
         };
-        app.rebuild_visible();
+        app.sort_and_rebuild();
         app
     }
 
     pub fn rebuild_visible(&mut self) {
-        self.visible.clear();
         let filter_tag = &self.storage.filter_tag;
-        let search_lower = if self.search_mode {
-            self.search_buffer.to_lowercase()
-        } else {
-            self.storage.search.to_lowercase()
-        };
-        for (idx, todo) in self.storage.todos.iter().enumerate() {
-            if !filter_tag.is_empty() && todo.tag != *filter_tag {
-                continue;
-            }
-            if !search_lower.is_empty() && !todo.text.to_lowercase().contains(&search_lower) {
-                continue;
-            }
-            self.visible.push(idx);
-        }
+        let search = if self.search_mode { &self.search_buffer } else { &self.storage.search };
+        self.visible = self.storage.build_visible_with_offset(filter_tag, search);
         if self.selected >= self.visible.len() {
             self.selected = if self.visible.is_empty() { 0 } else { self.visible.len() - 1 };
         }
         self.storage.dirty_tags = true;
+    }
+
+    pub fn sort_and_rebuild(&mut self) {
+        self.storage.sort_all();
+        self.rebuild_visible();
+        self.storage.rebuild_tags();
     }
 
     pub fn set_message(&mut self, msg: &str) {
@@ -76,38 +78,10 @@ impl App {
         self.message_ttl = 5;
     }
 
-    pub fn sort_todos(&mut self) {
-        self.storage.todos.sort_by(|a, b| {
-            if a.pinned != b.pinned {
-                return b.pinned.cmp(&a.pinned);
-            }
-            if a.done != b.done {
-                return a.done.cmp(&b.done);
-            }
-            let now = crate::todo::now_secs();
-            let a_overdue = a.due_date > 0 && a.due_date < now;
-            let b_overdue = b.due_date > 0 && b.due_date < now;
-            if a_overdue != b_overdue {
-                return b_overdue.cmp(&a_overdue);
-            }
-            let a_has_due = a.due_date > 0;
-            let b_has_due = b.due_date > 0;
-            if a_has_due != b_has_due {
-                return b_has_due.cmp(&a_has_due);
-            }
-            if a_has_due && b_has_due {
-                return a.due_date.cmp(&b.due_date);
-            }
-            std::cmp::Ordering::Equal
-        });
-        self.storage.dirty_tags = true;
-        self.rebuild_visible();
-    }
-
     pub fn check_all_done(&mut self) {
-        if self.storage.pending_count() == 0 && !self.storage.todos.is_empty() {
-            self.celebrate = 15;
-            let msg = self.i18n.get("messages.all_done").to_string();
+        if self.storage.pending_count() == 0 && self.storage.total_count() > 0 {
+            self.celebrate = config().celebration_duration_frames;
+            let msg = self.i18n.get("all_done").to_string();
             self.set_message(&msg);
         }
     }
@@ -123,6 +97,42 @@ impl App {
         if let Ok(content) = fs::read_to_string(&path) {
             let code = content.trim();
             i18n.set_language_by_code(code);
+        }
+    }
+
+    pub fn update_selection_from_mouse(&mut self, mouse: &MouseEvent) {
+        if let Some(area) = self.list_area {
+            let mouse_row = mouse.row;
+            let mouse_col = mouse.column;
+            if mouse_row >= area.y && mouse_row < area.y + area.height
+                && mouse_col >= area.x && mouse_col < area.x + area.width
+            {
+                let line_idx = (mouse_row - area.y) as usize;
+                if line_idx < self.line_to_task.len() {
+                    let task_idx = self.line_to_task[line_idx];
+                    let new_idx = self.list_top + task_idx;
+                    if new_idx < self.visible.len() {
+                        self.selected = new_idx;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn handle_mouse_click(&mut self, mouse: MouseEvent) {
+        let old_selected = self.selected;
+        self.update_selection_from_mouse(&mouse);
+        if self.selected == old_selected && self.selected < self.visible.len() {
+            let (id, _) = self.visible[self.selected];
+            if let Some(todo) = self.storage.get_todo(id) {
+                if !todo.children.is_empty() {
+                    self.storage.toggle_expand(id);
+                    self.rebuild_visible();
+                    if self.selected >= self.visible.len() {
+                        self.selected = if self.visible.is_empty() { 0 } else { self.visible.len() - 1 };
+                    }
+                }
+            }
         }
     }
 
@@ -168,9 +178,11 @@ impl App {
             Command::PageUp => navigation::page_up(self, term),
             Command::PageDown => navigation::page_down(self, term),
             Command::NewTask => task::new(self, term),
+            Command::NewSubtask => task::new_subtask(self, term),
             Command::EditTask => task::edit(self, term),
             Command::ToggleDone => task::toggle_done(self),
             Command::TogglePin => task::toggle_pin(self),
+            Command::ToggleExpand => task::toggle_expand(self),
             Command::SetTag => task::set_tag(self, term),
             Command::DeleteTask => task::delete(self, term),
             Command::DeleteAll => task::delete_all(self, term),
@@ -217,6 +229,8 @@ impl App {
                 &mut self.progress_state,
                 self.search_mode,
                 &self.search_buffer,
+                &mut self.list_area,
+                &mut self.line_to_task,
             );
         })?;
         Ok(())
@@ -256,20 +270,44 @@ pub fn run() -> anyhow::Result<()> {
         app.draw(&mut terminal)?;
 
         let timeout = if app.celebrate > 0 {
-            std::time::Duration::from_millis(150)
+            Duration::from_millis(config().celebration_frame_delay_ms)
         } else {
-            std::time::Duration::from_millis(100)
+            Duration::from_millis(500)
         };
         if !event::poll(timeout)? {
             continue;
         }
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                let keep = app.handle_input(key.code, &mut terminal, &data_dir);
-                if !keep {
-                    running = false;
+        while let Ok(true) = event::poll(Duration::from_secs(0)) {
+            match event::read()? {
+                Event::Key(key) if key.kind == KeyEventKind::Press => {
+                    let keep = app.handle_input(key.code, &mut terminal, &data_dir);
+                    if !keep {
+                        running = false;
+                        break;
+                    }
                 }
+                Event::Mouse(mouse) => match mouse.kind {
+                    MouseEventKind::ScrollUp => navigation::up(&mut app),
+                    MouseEventKind::ScrollDown => navigation::down(&mut app),
+                    MouseEventKind::Down(btn) if btn == crossterm::event::MouseButton::Left => {
+                        app.mouse_dragging = true;
+                        app.handle_mouse_click(mouse);
+                    }
+                    MouseEventKind::Drag(btn) if btn == crossterm::event::MouseButton::Left => {
+                        if app.mouse_dragging {
+                            app.update_selection_from_mouse(&mouse);
+                        }
+                    }
+                    MouseEventKind::Up(btn) if btn == crossterm::event::MouseButton::Left => {
+                        app.mouse_dragging = false;
+                    }
+                    _ => {}
+                },
+                Event::Resize(_, _) => {
+                    app.draw(&mut terminal)?;
+                }
+                _ => {}
             }
         }
     }

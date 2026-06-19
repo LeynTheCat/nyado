@@ -13,29 +13,34 @@ tags_header = " TAGS (1-9) "
 stats_header = " STATS "
 
 help_content = '''
-q / й – Quit
-l / L / д / Д – Switch language
-↑ / k / л – Up
-↓ / j / о – Down
-Home / g – Top
-End / G – Bottom
-PageUp / PageDown – Page scroll
-n / т – New task
-e / у – Edit task
+q – Quit
+l/L – Switch language
+↑/k – Up
+↓/j – Down
+Home/g – Top
+End/G – Bottom
+PageUp/PageDown – Page scroll
+n – New task
+Shift+N – New subtask
+e – Edit task
 Space – Toggle done
-p / з – Pin/unpin
-t / е – Set tag
-d / в – Delete task
-D / В – Delete all
+p – Pin/unpin
+t – Set tag
+d – Delete task
+D – Delete all
 / – Search
 Esc – Clear filters
 1-9 – Filter by tag
-M / m / ь – Set due date
-h / р , ? – Help
-f / а – Project actions
-[ / х – Previous project
-] / ъ – Next project
+M/m – Set due date
+h/? – Help
+f – Project actions
+[ – Previous project
+] – Next project
+Enter – Expand/collapse subtask
 '''
+
+popup_new_subtask_title = " New Subtask "
+popup_new_subtask_hint = "Enter subtask text:"
 
 popup_help_title = " Help "
 popup_help_hint = "Esc to close"
@@ -52,20 +57,18 @@ mood_overwhelming = " overwhelming! need a break! "
 mood_hectic = " *panic mode* hiss!! "
 mood_crazy = " insane amount! run! nya!! "
 
-popup_new_title = "New task"
+popup_new_title = " New task "
 popup_new_hint = "what needs doing?"
-popup_edit_title = "Edit task"
-popup_edit_hint = "edit text (Esc=cancel)"
-popup_set_tag_title = "Set tag"
+popup_edit_title = " Edit task "
+popup_edit_hint = "edit text"
+popup_set_tag_title = " Set tag "
 popup_set_tag_hint_existing = "existing: "
 popup_set_tag_hint_empty = "enter tag (blank=clear)"
-popup_delete_confirm = "delete \"{}\"? y/N"
-popup_delete_all_confirm = "delete ALL {} tasks? y/N"
+popup_delete_confirm = " Delete \"{}\"? y/N "
+popup_delete_all_confirm = " Delete ALL {} tasks? y/N "
 popup_delete_all_warning = "!! THIS CANNOT BE UNDONE !! "
-popup_search_title = "Search"
-popup_search_hint = "type to filter~"
-popup_due_date_title = "Set due date"
-popup_due_date_hint = "Enter due date YYYY-MM-DD (Esc to cancel, leave empty to clear)"
+popup_due_date_title = " Set due date "
+popup_due_date_hint = "Enter due date YYYY-MM-DD (leave empty to clear)"
 popup_due_time_hint = "Enter time HH:MM (leave empty for 00:00)"
 
 due_date_cleared = "due date cleared"
@@ -76,16 +79,22 @@ statusbar_hint_wide = " n:new  e:edit  Spc:done  p:pin  t:tag  d:del  D:del-all 
 statusbar_hint_medium = " n:new  e:edit  Spc:done  d:del  D:all  /:search  h:help  q:quit  l"
 statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 
-progress_label = " {} left "
 column_header = "  [/] #tag        task"
 empty_list_line1 = "nothing yet! press n :3"
 empty_list_line2 = "nyado is waiting nya~"
 topbar_title = " =^..^=  nyado "
-topbar_filter_prefix = "#"
-topbar_search_prefix = "/"
 topbar_date_format = "%H:%M  %a %d %b"
 title = " TODO "
 right_title = " NYADO "
+
+calendar_title = " CALENDAR "
+calendar_mon = "Mo"
+calendar_tue = "Tu"
+calendar_wed = "We"
+calendar_thu = "Th"
+calendar_fri = "Fr"
+calendar_sat = "Sa"
+calendar_sun = "Su"
 
 project_menu_title = " Projects "
 project_menu_help_title = " Help "
@@ -100,7 +109,6 @@ project_menu_hint_enter = "Enter"
 project_create_title = "Create project"
 project_rename_title = "Rename project"
 project_limit_reached = "Cannot create more than 64 projects"
-popup_esc_hint = "Esc to cancel"
 only_one_project = "only one project, cannot switch"
 project_switched = "Switched to project: {}"
 project_created = "Project '{}' created"
@@ -112,48 +120,25 @@ rename_failed = "Rename failed (name already exists or invalid)"
 delete_failed = "Delete failed"
 popup_delete_project_confirm = "Delete project '{}'? (y/n)"
 
-overdue_prefix = " ! overdue : "
-
 scroll_up = "▲"
 scroll_down = "▼"
 
-[ui]
-title = " TODO "
-right_title = " NYADO "
-topbar_title = " =^..^=  nyado "
-topbar_filter_prefix = "#"
-topbar_search_prefix = "/"
-topbar_date_format = "%H:%M  %a %d %b"
-statusbar_hint_wide = " n:new  e:edit  Spc:done  p:pin  t:tag  d:del  D:del-all  /:search  1-9:filter  M:due  h:help  Esc:clear  q:quit  l:lang"
-statusbar_hint_medium = " n:new  e:edit  Spc:done  d:del  D:all  /:search  h:help  q:quit  l"
-statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
-progress_label = " {} left "
-column_header = "  [/] #tag        task"
+project_prefix = " ~ project"
+pending_prefix = " * pending"
+done_prefix_stat = " x done"
+pinned_prefix = " ^ pinned"
+total_prefix = " # total"
+overdue_prefix = " ! overdue"
 
-[pending]
-prefix = " * pending : "
-
-[done]
-prefix = " x done    : "
-
-[pinned]
-prefix = " ^ pinned  : "
-
-[total]
-prefix = " # total   : "
-
-[messages]
 task_added = "task added! nya~"
 task_updated = "task updated! nya~"
-done = "done! good job :3"
-undone = "back to pending~"
-pinned = "pinned! *"
-unpinned = "unpinned~"
+done_msg = "done! good job :3"
+undone_msg = "back to pending~"
+pinned_msg = "pinned! *"
+unpinned_msg = "unpinned~"
 tag_set = "tag set!"
 tag_cleared = "tag cleared"
 deleted = "deleted! poof~"
 all_deleted = "clean slate! fresh start nya~"
 filters_cleared = "filters cleared~"
-showing_all = "showing all tasks"
-filter_format = "filter: #{}"
 all_done = "ALL DONE!! purrfect!! =^..^="

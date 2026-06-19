@@ -2,18 +2,18 @@
 
 ![Rust Version](https://img.shields.io/badge/rust-1.70+-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)
 ![TUI](https://img.shields.io/badge/UI-ratatui-purple)
 ![i18n](https://img.shields.io/badge/i18n-multilingual-brightgreen)
-![Features](https://img.shields.io/badge/features-tags%20%7C%20search%20%7C%20due%20dates-yellow)
+![Features](https://img.shields.io/badge/features-projects%20%7C%20tags%20%7C%20search%20%7C%20due%20dates-yellow)
 ![GitHub release](https://img.shields.io/github/v/release/LeynTheCat/nyado)
 
 <img align="left" src="img/nyado.png" width="120" alt="nyado logo">
 
-```
-nyado is a terminal-based task manager inspired by meowdo.
-It supports multiple languages, tags, search, pinning, due dates.
-```
+~~~
+nyado is a terminal‑based task manager inspired by meowdo.  
+it supports multiple languages, tags, search, pinning, due dates, project folders, etc.
+~~~
 
 ![nyado preview](img/preview.png)
 
@@ -27,38 +27,35 @@ Choose one of the following methods:
 cargo install nyado
 ```
 
-This will download and compile the latest version. Language files are built into the binary, but you can override them by placing your own `lang_*.toml` files in `~/.config/nyado/` (Linux) or `%APPDATA%\Local\nyado` (Windows).
+This will download and compile the latest version. Language files are built into the binary, but you can override them by placing your own `lang_*.toml` files in `~/.config/nyado/` (Linux) or `%APPDATA%\nyado` (Windows).
 
 ### 2. Arch Linux (AUR)
 
-If you are on Arch Linux (or an Arch‑based distribution), you can install one of the AUR packages:
+If you are on Arch Linux (or an Arch‑based distribution), install one of the AUR packages using your favourite helper (`paru`, `yay`, `pamac`, etc.):
 
-- **Pre‑compiled binary** (fast, no compilation):
+- **Pre‑compiled binary** (fast, no compilation):  
   ```
   paru -S nyado-bin
-  ```
-  or
-  ```
-  yay -S nyado-bin
-  ```
+  ```  
+  *Maintainer:* [InTeaReable](https://aur.archlinux.org/account/InTeaReable/) (LeynTheCat on GitHub)
 
-- **Source – release tarball** (compiled from the latest release):
+- **Source – release tarball** (compiled from the latest release):  
   ```
   paru -S nyado
-  ```
+  ```  
+  *Co-maintainers:* [lmartinez-mirror](https://aur.archlinux.org/account/lmartinez-mirror/) (Luis Martinez, original package author) and [InTeaReable](https://aur.archlinux.org/account/InTeaReable/)
 
-- **Source – latest git commit** (bleeding edge):
+- **Source – latest git commit** (bleeding edge):  
   ```
   paru -S nyado-git
-  ```
-  
+  ```  
+  *Maintainer:* [InTeaReable](https://aur.archlinux.org/account/InTeaReable/) (LeynTheCat on GitHub)
+
 All three packages provide the `nyado` command and automatically install the required language files.
 
-### 3. Quick install (binary, no compilation)
+### 3. Quick install (binary, no compilation) – Linux only
 
-```
-curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install_bin.sh | bash
-```
+```curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install_bin.sh | bash```
 
 This script:
 - Detects your CPU architecture (x86_64 or aarch64)
@@ -66,11 +63,9 @@ This script:
 - Installs it to `~/.local/bin/`
 - Fetches and installs language files to `~/.config/nyado/` (replaces old configs)
 
-### 4. Build from source (via install script)
+### 4. Build from source (via install script) – Linux only
 
-```
-curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install.sh | bash
-```
+```curl -sSL https://raw.githubusercontent.com/LeynTheCat/nyado/main/install.sh | bash```
 
 The script will:
 - Download the latest source code from GitHub
@@ -79,21 +74,17 @@ The script will:
 - Install binary and config files
 
 ### 5. Manual installation (git clone)
-
 ```
 git clone https://github.com/LeynTheCat/nyado.git
 cd nyado
 ./install.sh
 ```
-
 or without cloning:
-
 ```
 cargo install --git https://github.com/LeynTheCat/nyado.git
 mkdir -p ~/.config/nyado
 cp config/*.toml ~/.config/nyado/
 ```
-
 ### 6. Windows
 
 Compiling for Windows is possible – just run `cargo build --release` on a Windows machine with Rust installed.  
@@ -125,7 +116,6 @@ To make installation easier, two batch scripts are provided in the repository:
 
 No official support is provided – but the batch scripts make installation trivial.
 
-
 ## Update
 
 - **Binary installation**: simply run the same quick install command again – it will download the latest binary and update config files.
@@ -136,20 +126,18 @@ No official support is provided – but the batch scripts make installation triv
 
 ## Uninstall
 
-To completely remove nyado:
-
+To completely remove nyado (Linux):
 ```
 ./install.sh uninstall
 ```
-
 This deletes the binary from `~/.local/bin/` and the config directory `~/.config/nyado/`.
 Your tasks data is stored separately in `~/.local/share/nyado/` – if you want to remove that too, delete it manually:
-
 ```
 rm -rf ~/.local/share/nyado
 ```
-
-On Windows, simply delete the `nyado.exe` file and the `%APPDATA%\Local\nyado` folder. (if you installed nyado via nyado_install.bat you can use nyado_uninstall.bat)
+**Windows**:  
+- If installed via `nyado_install.bat`, run `nyado_uninstall.bat`.  
+- Otherwise, delete the `nyado.exe` file and remove the folders `%LOCALAPPDATA%\nyado` (data) and `%APPDATA%\nyado` (config) manually.
 
 ## Usage
 
@@ -157,29 +145,31 @@ Just run `nyado` from your terminal.
 
 ### Key bindings
 
-| Action              | Keys (English / Russian)                          |
-|---------------------|---------------------------------------------------|
-| Quit                | q / й                                             |
-| Language switch     | l / L / д / Д                                     |
-| Navigate down       | j / о , ↓                                         |
-| Navigate up         | k / л , ↑                                         |
-| Top / Bottom        | g / п , G / П (or Home / End)                     |
-| Page down / up      | PageDown / PageUp                                 |
-| New task            | n / т                                             |
-| Edit task           | e / у                                             |
-| Toggle done         | Space                                             |
-| Pin / unpin         | p / з                                             |
-| Set tag             | t / е                                             |
-| Delete task         | d / в                                             |
-| Delete all tasks    | D / В (Shift + letter)                            |
-| Search              | / / .                                             |
-| Filter by tag (1‑9) | 1…9 (only for existing tags)                      |
-| Clear filters       | Esc                                               |
-| Set due date/time   | M / m / ь / Ь                                     |
-| Show help           | h / р , ?                                         |
-| Project actions	    | f / а                                             |
-| Previous project    |	[ / х                                             |
-| Next project        | ] / ъ                                             |
+| Action                   | Keys (English / Russian)                               |
+|--------------------------|--------------------------------------------------------|
+| Quit                     | q / й                                                  |
+| Language switch          | l / L / д / Д                                          |
+| Navigate down            | j / о , ↓                                              |
+| Navigate up              | k / л , ↑                                              |
+| Top / Bottom             | g / п , G / П (or Home / End)                          |
+| Page down / up           | PageDown / PageUp                                      |
+| New task                 | n / т                                                  |
+| **New subtask**          | **Shift+n / Shift+т**                                  |
+| Edit task                | e / у                                                  |
+| Toggle done              | Space                                                  |
+| Pin / unpin              | p / з                                                  |
+| Set tag                  | t / е                                                  |
+| Delete task              | d / в                                                  |
+| Delete all tasks         | D / В (Shift + letter)                                 |
+| Search                   | / / .                                                  |
+| Filter by tag (1‑9)      | 1…9 (only for existing tags)                           |
+| Clear filters            | Esc                                                    |
+| Set due date/time        | M / m / ь / Ь                                          |
+| **Expand/collapse subtask** | **Enter**                                           |
+| Show help                | h / р , ?                                              |
+| Project actions          | f / а                                                  |
+| Previous project         | [ / х                                                  |
+| Next project             | ] / ъ                                                  |
 
 Note: Filtering works for the first nine most‑used tags displayed in the right panel.
 Press 1‑9 to filter by that tag, press Esc to clear the filter and the search query.
@@ -218,35 +208,52 @@ nyado can also be used non‑interactively from the command line:
       nyado --project-name work --create-task "Write report" --tag important
       nyado --list-tasks --done
 ```
-
 ## Localisation
 
-- Language files are stored in `~/.config/nyado/lang_*.toml` (Linux) or `%APPDATA%\Local\nyado\lang_*.toml` (Windows).
+- Language files are stored in `~/.config/nyado/lang_*.toml` (Linux) or `%APPDATA%\nyado\lang_*.toml` (Windows).
 - You can add your own language by placing a `lang_xx.toml` file there (just copy an existing one and translate).
 
 ## Data storage
 
-All data is stored in `~/.local/share/nyado/` (Linux) or `%APPDATA%\Local\nyado` (Windows).
+All data (projects, backups) is stored in:
 
-- Projects are saved as separate text files inside `projects/` (e.g., `projects/default.txt`).
-- Backup copies are kept in `projects/.backups/<project>/`.
+- **Linux**: `~/.local/share/nyado/`
+- **Windows**: `%LOCALAPPDATA%\nyado\`
 
-Each task is stored as a single line in the following pipe‑separated format:
+Inside this directory:
+- `projects/` – YAML files, one per project (e.g., `default.yaml`, `work.yaml`).
+- `projects/.backups/<project>/` – rotating backups (`00.bak` … `max_backups`).
 
+Old plain‑text format (.txt) is still read once for migration, but new projects and all updates are written in YAML.
+
+### YAML structure
+
+Each project file contains a list of tasks with the following fields:
+```
+- id: 1234567890                 # unique ID
+  parent_id: null                # if present – this task is a subtask
+  depth: 0                       # nesting level (automatically maintained)
+  done: false
+  pinned: false
+  tag: "work"                    # tag name (empty string = no tag)
+  text: "Write documentation"
+  created_at: 1734567890         # Unix timestamp (seconds)
+  done_at: 0                     # 0 if not done
+  due_date: 0                    # 0 if no due date
+  children: []                   # list of subtasks (same structure)
+```
+The file is a valid YAML sequence – you can edit it manually, but be careful with indentation.
+Field depth is automatically recalculated when loading; you don't have to maintain it by hand.
+
+### Legacy TXT format (deprecated)
+
+Older versions used a pipe‑separated line format. This format is no longer used for saving, but nyado will automatically convert any existing .txt project file to YAML on first run. The original .txt file is renamed to .txt.migrated.
+After migration, only the YAML file is used.
+
+Format of the old .txt line:
 ```
 <pin>|<done>|<tag>|<text>|<created_at>|<done_at>|<due_date>
 ```
-
-| Field       | Description                                               |
-|-------------|-----------------------------------------------------------|
-| `<pin>`     | `P` if pinned, otherwise `-`                             |
-| `<done>`    | `x` if done, otherwise space (` `)                        |
-| `<tag>`     | Tag name, or `none` if no tag                             |
-| `<text>`    | Task text                                                 |
-| `<created_at>` | Unix timestamp (seconds) of creation                     |
-| `<done_at>` | Unix timestamp when completed, or `0`                     |
-| `<due_date>`| Unix timestamp of due date, or `0` if not set             |
-
 You may edit these files manually, but be cautious.
 
 ## Requirements
@@ -256,11 +263,10 @@ You may edit these files manually, but be cautious.
   - For the source installer: Rust toolchain (installed automatically if missing).
 
 - **Windows**
-  - `curl` – must be available in PATH (the installer script checks for it).
   - A terminal that supports UTF‑8 and CJK fonts:
     - **Recommended:** Windows Terminal
     - **Alternative:** `cmd.exe` with a TrueType font (e.g., `Cascadia Code`, `Consolas`, `Microsoft YaHei`) and run `chcp 65001` before launching nyado.
-
+  - `curl` is only needed if you download the binary manually; the provided `.bat` script uses PowerShell.
 
 ## Contributing
 

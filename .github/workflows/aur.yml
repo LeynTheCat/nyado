@@ -101,3 +101,23 @@ jobs:
           ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
           commit_message: "Update to version ${{ steps.version.outputs.tag }}"
           allow_empty_commits: false
+
+  deploy-nyado-git:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare PKGBUILD for -git
+        run: |
+          cp PKGBUILD.git PKGBUILD
+
+      - name: Deploy to AUR (nyado-git)
+        uses: KSXGitHub/github-actions-deploy-aur@master
+        with:
+          pkgname: nyado-git
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
+          commit_message: "Update to latest commit"
+          allow_empty_commits: false

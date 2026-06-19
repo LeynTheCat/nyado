@@ -13,7 +13,7 @@ pub fn draw_statusbar(frame: &mut Frame, area: Rect, message: &str, i18n: &I18n)
     if area.width == 0 {
         return;
     }
-    let style = Style::default().bg(color::STATUSBAR_BG).fg(color::STATUSBAR_FG);
+    let style = Style::default().bg(color::statusbar_bg()).fg(color::statusbar_fg());
     let block = Block::default().style(style);
     frame.render_widget(block, area);
 
@@ -33,7 +33,11 @@ pub fn draw_statusbar(frame: &mut Frame, area: Rect, message: &str, i18n: &I18n)
     let hint_width = chosen_hint.width() as u16;
     let x = area.left() + 2;
     if hint_width + 2 <= area.width {
-        frame.render_widget(Paragraph::new(chosen_hint), Rect::new(x, area.top(), hint_width, 1));
+        let hint_style = Style::default().add_modifier(Modifier::BOLD);
+        frame.render_widget(
+            Paragraph::new(Span::styled(chosen_hint, hint_style)),
+            Rect::new(x, area.top(), hint_width, 1),
+        );
     }
 
     if !message.is_empty() {
@@ -43,7 +47,7 @@ pub fn draw_statusbar(frame: &mut Frame, area: Rect, message: &str, i18n: &I18n)
         if msg_width > 0 && msg_width + 2 <= area.width {
             let msg_x = area.right() - msg_width - 2;
             frame.render_widget(
-                Paragraph::new(Span::styled(truncated_msg, Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD))),
+                Paragraph::new(Span::styled(truncated_msg, Style::default().fg(color::green()).add_modifier(Modifier::BOLD))),
                 Rect::new(msg_x, area.top(), msg_width, 1),
             );
         }

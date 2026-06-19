@@ -10,13 +10,13 @@ pub fn show(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
         help_text.push('\n');
     }
     let title = app.i18n.get("popup_help_title");
-    let hint = app.i18n.get("popup_help_hint");
     let _ = popup_with_mode_layout(
         title,
-        hint,
         &help_text,
         PopupMode::Readonly,
         term,
         PopupReadonlyLayout::TwoColumns,
+        None,
+        None,
     );
 }

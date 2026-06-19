@@ -1,4 +1,4 @@
-use super::common::{color, tag_color, truncate_text_by_width, visual_width};
+use super::common::{color, tag_color, visual_width};
 use super::progress_bar::{draw_progress_bar, ProgressState};
 use crate::i18n::I18n;
 use crate::storage::Storage;
@@ -10,30 +10,33 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 pub fn draw_todo_list(
     frame: &mut Frame,
     area: Rect,
     storage: &Storage,
-    visible: &[usize],
-    selected: usize,
+    visible: &[(u64, usize)],
+    selected_idx: usize,
     scroll_state: &mut usize,
     i18n: &I18n,
     progress_state: &mut ProgressState,
     _search_mode: bool,
     _search_buffer: &str,
+    list_area: &mut Option<Rect>,
+    line_to_task: &mut Vec<usize>,
 ) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(color::BORDER))
+        .border_style(Style::default().fg(color::border()))
         .title(Span::styled(
             format!("[ {} ]", i18n.get("title")),
-            Style::default().fg(color::HEADER).add_modifier(Modifier::BOLD),
+            Style::default().fg(color::header()).add_modifier(Modifier::BOLD),
         ));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
-    let total = storage.todos.len();
+    let total = storage.total_count();
     if total > 0 && inner.width > 15 && inner.width >= 2 {
         let done = storage.done_count();
         let prog_area = Rect::new(inner.left() + 1, inner.top(), inner.width - 2, 1);
@@ -53,7 +56,7 @@ pub fn draw_todo_list(
         if line_len > 0 {
             let divider = Line::from(vec![Span::raw("─".repeat(line_len))]);
             if line_len as u16 <= inner.width - 2 {
-                frame.render_widget(Paragraph::new(divider).style(Style::default().fg(color::BORDER)),
+                frame.render_widget(Paragraph::new(divider).style(Style::default().fg(color::border())),
                                     Rect::new(inner.left() + 1, inner.top() + 3, inner.width - 2, 1));
             }
         }
@@ -64,6 +67,13 @@ pub fn draw_todo_list(
     if list_height == 0 {
         return;
     }
+
+    *list_area = Some(Rect::new(
+        inner.left() + 1,
+        list_start_y,
+        inner.width - 2,
+        list_height as u16,
+    ));
 
     let total_items = visible.len();
     if total_items == 0 {
@@ -78,38 +88,70 @@ pub fn draw_todo_list(
 
         if msg1_len + 2 <= inner.width && y1 < inner.bottom() - 1 {
             frame.render_widget(
-                Paragraph::new(Span::styled(msg1, Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD))),
+                Paragraph::new(Span::styled(msg1, Style::default().fg(color::pending()).add_modifier(Modifier::BOLD))),
                 Rect::new(inner.left() + 2, y1, msg1_len, 1),
             );
         }
         if msg2_len + 2 <= inner.width && y2 < inner.bottom() - 1 {
             frame.render_widget(
-                Paragraph::new(Span::styled(msg2, Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD))),
+                Paragraph::new(Span::styled(msg2, Style::default().fg(color::pending()).add_modifier(Modifier::BOLD))),
                 Rect::new(inner.left() + 2, y2, msg2_len, 1),
             );
         }
         return;
     }
 
-    if selected < *scroll_state {
-        *scroll_state = selected;
-    } else if selected >= *scroll_state + list_height {
-        *scroll_state = selected.saturating_sub(list_height - 1);
-    }
-    if *scroll_state + list_height > total_items {
-        *scroll_state = total_items.saturating_sub(list_height);
+    let mut all_lines = Vec::new();
+    let mut task_line_indices = Vec::new();
+    line_to_task.clear();
+    for (vis_idx, (todo_id, offset)) in visible.iter().enumerate() {
+        let todo = match storage.get_todo(*todo_id) {
+            Some(t) => t,
+            None => continue,
+        };
+        let is_selected = vis_idx == selected_idx;
+        let lines = render_task_lines(todo, *offset, (inner.width - 2) as usize, storage, is_selected);
+        let start = all_lines.len();
+        let count = lines.len();
+        for _ in 0..count {
+            line_to_task.push(vis_idx);
+        }
+        all_lines.extend(lines);
+        task_line_indices.push((start, count, vis_idx));
     }
 
-    let remaining = if list_height < total_items && *scroll_state + list_height <= total_items {
-        total_items - (*scroll_state + list_height)
+    let total_lines = all_lines.len();
+    if total_lines == 0 {
+        return;
+    }
+
+    let (selected_line_start, selected_line_count, _) = task_line_indices[selected_idx];
+    let selected_line_end = selected_line_start + selected_line_count - 1;
+
+    if selected_line_start < *scroll_state {
+        *scroll_state = selected_line_start;
+    } else if selected_line_end >= *scroll_state + list_height {
+        *scroll_state = selected_line_end.saturating_sub(list_height - 1);
+    }
+    if *scroll_state + list_height > total_lines {
+        *scroll_state = total_lines.saturating_sub(list_height);
+    }
+
+    let mut remaining_tasks = 0;
+    for &(start, count, _) in &task_line_indices {
+        if start + count > *scroll_state + list_height {
+            remaining_tasks += 1;
+        }
+    }
+    let up_indicator = i18n.get("scroll_up");
+    let down_indicator = i18n.get("scroll_down");
+    let remaining_str = if remaining_tasks > 0 {
+        format!("{}", remaining_tasks)
     } else {
-        0
+        String::new()
     };
-    let up = i18n.get("scroll_up");
-    let down_symbol = i18n.get("scroll_down");
-    let remaining_str = format!("{}", remaining);
-    let max_width = up.chars().count()
-        .max(down_symbol.chars().count())
+    let max_width = up_indicator.chars().count()
+        .max(down_indicator.chars().count())
         .max(remaining_str.chars().count()) as u16;
     let x = inner.right() - max_width - 1;
 
@@ -117,24 +159,24 @@ pub fn draw_todo_list(
         let y_up = list_start_y - 1;
         if y_up > inner.top() + 2 {
             frame.render_widget(
-                Paragraph::new(Span::styled(up, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD)))
+                Paragraph::new(Span::styled(up_indicator, Style::default().fg(color::search()).bg(Color::Reset).add_modifier(Modifier::BOLD)))
                     .alignment(Alignment::Right),
                 Rect::new(x, y_up, max_width, 1),
             );
         }
     }
 
-    if remaining > 0 {
+    if remaining_tasks > 0 {
         let y1 = inner.bottom() - 2;
         let y2 = inner.bottom() - 1;
         if y1 > list_start_y {
             frame.render_widget(
-                Paragraph::new(Span::styled(down_symbol, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD)))
+                Paragraph::new(Span::styled(down_indicator, Style::default().fg(color::search()).bg(Color::Reset).add_modifier(Modifier::BOLD)))
                     .alignment(Alignment::Right),
                 Rect::new(x, y1, max_width, 1),
             );
             frame.render_widget(
-                Paragraph::new(Span::styled(remaining_str, Style::default().fg(color::SEARCH).bg(Color::Reset).add_modifier(Modifier::BOLD)))
+                Paragraph::new(Span::styled(remaining_str, Style::default().fg(color::search()).bg(Color::Reset).add_modifier(Modifier::BOLD)))
                     .alignment(Alignment::Right),
                 Rect::new(x, y2, max_width, 1),
             );
@@ -142,68 +184,117 @@ pub fn draw_todo_list(
     }
 
     for i in 0..list_height {
-        let vi = *scroll_state + i;
-        if vi >= total_items {
+        let line_idx = *scroll_state + i;
+        if line_idx >= total_lines {
             break;
         }
-        let todo_idx = visible[vi];
-        let todo = &storage.todos[todo_idx];
-        let is_selected = vi == selected;
-        let y = list_start_y + i as u16;
-
-        let base_style = if is_selected {
-            Style::default().bg(color::SELECTED_BG).fg(color::SELECTED_FG).add_modifier(Modifier::BOLD)
-        } else if todo.done {
-            Style::default().fg(color::DONE).dim()
-        } else if todo.pinned {
-            Style::default().fg(color::PIN).add_modifier(Modifier::BOLD)
-        } else {
-            Style::default().fg(color::PENDING).add_modifier(Modifier::BOLD)
-        };
-
-        let pin_mark = if todo.pinned && !todo.done { '*' } else { ' ' };
-        let done_mark = if todo.done { 'x' } else { ' ' };
-
-        let mut spans = Vec::new();
-        spans.push(Span::styled(format!("{} [{}] ", pin_mark, done_mark), base_style));
-
-        if !todo.tag.is_empty() {
-            let tag_style = if is_selected {
-                base_style
-            } else {
-                Style::default().fg(tag_color(&todo.tag)).add_modifier(Modifier::BOLD)
-            };
-            spans.push(Span::styled(format!("#{} ", todo.tag), tag_style));
-        }
-
-        if !todo.done && todo.due_date > 0 {
-            let now = now_secs();
-            let overdue = todo.due_date < now;
-            let due_symbol = if overdue { "‼ " } else { "~~ " };
-            let due_style = if is_selected {
-                base_style
-            } else if overdue {
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(color::GREEN).add_modifier(Modifier::BOLD)
-            };
-            spans.push(Span::styled(due_symbol, due_style));
-        }
-
-        let text_part = &todo.text;
-        let used_width: usize = spans.iter().map(|s| s.content.len()).sum();
-        let max_width_text = (inner.width as usize).saturating_sub(used_width + 2);
-        let truncated_text = if visual_width(text_part) > max_width_text {
-            truncate_text_by_width(text_part, max_width_text.saturating_sub(1)) + "…"
-        } else {
-            text_part.clone()
-        };
-        spans.push(Span::styled(truncated_text, base_style));
-
-        let line = Line::from(spans);
+        let line = &all_lines[line_idx];
         let line_width = line.width() as u16;
+        let y = list_start_y + i as u16;
         if y < inner.bottom() - 1 && line_width + 1 <= inner.width {
-            frame.render_widget(Paragraph::new(line), Rect::new(inner.left() + 1, y, line_width, 1));
+            frame.render_widget(Paragraph::new(line.clone()), Rect::new(inner.left() + 1, y, line_width, 1));
         }
     }
+}
+
+fn render_task_lines(
+    todo: &crate::todo::Todo,
+    offset: usize,
+    max_width: usize,
+    storage: &Storage,
+    is_selected: bool,
+) -> Vec<Line<'static>> {
+    let base_style = if is_selected {
+        Style::default().bg(color::selected_bg()).fg(color::selected_fg()).add_modifier(Modifier::BOLD)
+    } else if todo.done {
+        Style::default().fg(color::done()).dim()
+    } else if todo.pinned {
+        Style::default().fg(color::pin()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(color::pending()).add_modifier(Modifier::BOLD)
+    };
+
+    let done_mark = if todo.done { "x" } else { " " };
+    let pin_space = if todo.pinned && !todo.done { "* " } else { "  " };
+    let expand_symbol = if todo.children.is_empty() {
+        ""
+    } else if storage.is_expanded(todo.id) {
+        "[-] "
+    } else {
+        "[+] "
+    };
+
+    let mut prefix_spans = Vec::new();
+    prefix_spans.push(Span::styled(" ".repeat(offset), base_style));
+    prefix_spans.push(Span::styled(pin_space, base_style));
+    prefix_spans.push(Span::styled(format!("[{}] ", done_mark), base_style));
+    prefix_spans.push(Span::styled(expand_symbol, base_style));
+
+    if !todo.tag.is_empty() {
+        let tag_style = if is_selected {
+            base_style
+        } else {
+            Style::default().fg(tag_color(&todo.tag)).add_modifier(Modifier::BOLD)
+        };
+        prefix_spans.push(Span::styled(format!("#{} ", todo.tag), tag_style));
+    }
+
+    if !todo.done && todo.due_date > 0 {
+        let now = now_secs();
+        let overdue = todo.due_date < now;
+        let due_symbol = if overdue { "‼ " } else { "~~ " };
+        let due_style = if is_selected {
+            base_style
+        } else if overdue {
+            Style::default().fg(color::due_overdue()).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(color::due_future()).add_modifier(Modifier::BOLD)
+        };
+        prefix_spans.push(Span::styled(due_symbol, due_style));
+    }
+
+    let prefix_width = prefix_spans.iter().map(|s| s.content.width()).sum::<usize>();
+    let available_width = max_width.saturating_sub(prefix_width);
+    if available_width <= 0 {
+        let mut spans = prefix_spans.clone();
+        spans.push(Span::styled("…", base_style));
+        return vec![Line::from(spans)];
+    }
+
+    let text = &todo.text;
+    let mut wrapped_lines = Vec::new();
+    let mut remaining = text.as_str();
+
+    while !remaining.is_empty() {
+        let mut split_pos = 0;
+        let mut current_width = 0;
+        for (idx, ch) in remaining.char_indices() {
+            let ch_width = ch.width().unwrap_or(1);
+            if current_width + ch_width > available_width {
+                break;
+            }
+            current_width += ch_width;
+            split_pos = idx + ch.len_utf8();
+        }
+        if split_pos == 0 {
+            split_pos = remaining.chars().next().map(|c| c.len_utf8()).unwrap_or(1);
+        }
+        let (line_part, rest) = remaining.split_at(split_pos);
+        wrapped_lines.push(line_part.to_string());
+        remaining = rest;
+    }
+
+    let mut result = Vec::new();
+    for (i, line_part) in wrapped_lines.into_iter().enumerate() {
+        let line = if i == 0 {
+            let mut spans = prefix_spans.clone();
+            spans.push(Span::styled(line_part, base_style));
+            Line::from(spans)
+        } else {
+            let indent = " ".repeat(prefix_width);
+            Line::from(Span::styled(format!("{}{}", indent, line_part), base_style))
+        };
+        result.push(line);
+    }
+    result
 }

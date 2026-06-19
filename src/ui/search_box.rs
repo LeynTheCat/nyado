@@ -13,10 +13,11 @@ pub fn draw_searchbox(frame: &mut Frame, area: Rect, search_buffer: &str) {
     }
     let block = Block::default()
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(color::BORDER));
+        .border_style(Style::default().fg(color::border()));
     let inner = block.inner(area);
     frame.render_widget(Clear, area);
     frame.render_widget(block, area);
+
     let text = format!("   {}", search_buffer);
     let text_width = text.width();
     if text_width + 4 > inner.width as usize {

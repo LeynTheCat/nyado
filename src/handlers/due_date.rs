@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::popup::{popup_with_mode, PopupMode};
+use crate::popup::{popup_with_mode_layout, PopupMode, PopupReadonlyLayout};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
@@ -7,21 +7,37 @@ use std::io;
 
 pub fn set(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
     if !app.visible.is_empty() {
-        let idx = app.visible[app.selected];
+        let (id, _depth) = app.visible[app.selected];
         let date_title = app.i18n.get("popup_due_date_title");
         let date_hint = app.i18n.get("popup_due_date_hint");
-        if let Ok(Some(date_str)) = popup_with_mode(date_title, date_hint, "", PopupMode::Singleline, term) {
+        if let Ok(Some(date_str)) = popup_with_mode_layout(
+            date_title,
+            "",
+            PopupMode::Singleline,
+            term,
+            PopupReadonlyLayout::SingleColumn,
+            Some(date_hint),
+            None,
+        ) {
             let trimmed_date = date_str.trim();
             if trimmed_date.is_empty() {
-                app.storage.todos[idx].due_date = 0;
+                let _ = app.storage.set_due_date(id, 0);
                 let msg = app.i18n.get("due_date_cleared").to_string();
                 app.set_message(&msg);
-                app.sort_todos();
-                app.storage.save();
+                app.sort_and_rebuild();
                 return;
             }
+            let time_title = app.i18n.get("popup_due_date_title");
             let time_hint = app.i18n.get("popup_due_time_hint");
-            let time_res = popup_with_mode("", time_hint, "", PopupMode::Singleline, term);
+            let time_res = popup_with_mode_layout(
+                time_title,
+                "",
+                PopupMode::Singleline,
+                term,
+                PopupReadonlyLayout::SingleColumn,
+                Some(time_hint),
+                None,
+            );
             let time_str = match time_res {
                 Ok(Some(t)) => t.trim().to_string(),
                 Ok(None) => return,
@@ -32,7 +48,7 @@ pub fn set(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
                 }
             };
             if let Some(timestamp) = parse_datetime(trimmed_date, &time_str) {
-                app.storage.todos[idx].due_date = timestamp;
+                let _ = app.storage.set_due_date(id, timestamp);
                 let display = if time_str.is_empty() {
                     format!("{} {}", app.i18n.get("due_date_set"), trimmed_date)
                 } else {
@@ -44,8 +60,7 @@ pub fn set(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) {
                 app.set_message(&msg);
                 return;
             }
-            app.sort_todos();
-            app.storage.save();
+            app.sort_and_rebuild();
         }
     }
 }

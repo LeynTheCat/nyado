@@ -13,7 +13,7 @@ pub fn clear(app: &mut App) {
     app.search_buffer.clear();
     app.selected = 0;
     app.rebuild_visible();
-    let msg = app.i18n.get("messages.filters_cleared").to_string();
+    let msg = app.i18n.get("filters_cleared").to_string();
     app.set_message(&msg);
 }
 

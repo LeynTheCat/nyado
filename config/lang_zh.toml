@@ -13,29 +13,34 @@ tags_header = " 标签 (1-9) "
 stats_header = " 统计信息 "
 
 help_content = '''
-q / й – 退出
-l / L / д / Д – 切换语言
-↑ / k / л – 上
-↓ / j / о – 下
-Home / g – 顶部
-End / G – 底部
-PageUp / PageDown – 翻页
-n / т – 新建任务
-e / у – 编辑
+q – 退出
+l/L – 切换语言
+↑/k – 上
+↓/j – 下
+Home/g – 顶部
+End/G – 底部
+PageUp/PageDown – 翻页
+n – 新建任务
+Shift+N – 新建子任务
+e – 编辑
 Space – 完成/恢复
-p / з – 固定/取消固定
-t / е – 设置标签
-d / в – 删除任务
-D / В – 删除全部
+p – 固定/取消固定
+t – 设置标签
+d – 删除任务
+D – 删除全部
 / – 搜索
 Esc – 清除过滤
 1-9 – 按标签过滤
-M / m / ь – 设置截止日期
-h / р , ? – 帮助
-f / а – 项目操作
-[ / х – 上一个项目
-] / ъ – 下一个项目
+M/m – 设置截止日期
+h/? – 帮助
+f – 项目操作
+[ – 上一个项目
+] – 下一个项目
+Enter – 展开/折叠子任务
 '''
+
+popup_new_subtask_title = " 新建子任务 "
+popup_new_subtask_hint = "输入子任务文本:"
 
 popup_help_title = " 帮助 "
 popup_help_hint = "Esc 关闭"
@@ -62,8 +67,6 @@ popup_set_tag_hint_empty = "输入标签（留空=清除）"
 popup_delete_confirm = "删除 “{}” ？ y/N"
 popup_delete_all_confirm = "删除全部 {} 个任务？ y/N"
 popup_delete_all_warning = "!! 此操作不可撤销 !! "
-popup_search_title = "搜索"
-popup_search_hint = "输入过滤文字～"
 popup_due_date_title = "设置截止日期"
 popup_due_date_hint = "输入日期 YYYY-MM-DD (Esc 取消, 留空以清除)"
 popup_due_time_hint = "输入时间 HH:MM (留空表示 00:00)"
@@ -72,20 +75,26 @@ due_date_cleared = "截止日期已清除"
 due_date_set = "截止日期已设为 {}"
 due_date_invalid = "日期/时间格式无效"
 
-statusbar_hint_wide = "n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删  /:搜索  1-9:筛选  M:期限  h:帮助  f:项目  Esc:清除  q:退出  l:语言"
-statusbar_hint_medium = "n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:搜索  h:帮助  q:退出  l"
-statusbar_hint_narrow = "n  e  Spc  d  D  /  h  q  l"
+statusbar_hint_wide = " n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删  /:搜索  1-9:筛选  M:截止  h:帮助  f:项目  Esc:清除  q:退出  l:语言"
+statusbar_hint_medium = " n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:搜索  h:帮助  q:退出  l"
+statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
 
-progress_label = " {} 剩余 "
 column_header = "  [/] #标签        任务 "
 empty_list_line1 = "暂无任务！按 n 创建 :3"
 empty_list_line2 = "nyado 在等待，喵~"
 topbar_title = " =^..^=  nyado "
-topbar_filter_prefix = "#"
-topbar_search_prefix = "/"
 topbar_date_format = "%H:%M  %a %d %b"
 title = " 任务 "
 right_title = " 喵铛 "
+
+calendar_title = " 日历 "
+calendar_mon = "一"
+calendar_tue = "二"
+calendar_wed = "三"
+calendar_thu = "四"
+calendar_fri = "五"
+calendar_sat = "六"
+calendar_sun = "日"
 
 project_menu_title = " 项目 "
 project_menu_help_title = " 帮助 "
@@ -100,7 +109,6 @@ project_menu_hint_enter = "Enter"
 project_create_title = "创建项目"
 project_rename_title = "重命名项目"
 project_limit_reached = "最多只能创建 64 个项目"
-popup_esc_hint = "Esc 取消"
 only_one_project = "只有一个项目，无法切换"
 project_switched = "已切换到项目：{}"
 project_created = "项目 '{}' 已创建"
@@ -112,48 +120,25 @@ rename_failed = "重命名失败（名称已存在或无效）"
 delete_failed = "删除失败"
 popup_delete_project_confirm = "删除项目 '{}'？ (y/n)"
 
-overdue_prefix = " ! 逾期 : "
-
 scroll_up = "▲"
 scroll_down = "▼"
 
-[ui]
-title = " 任务 "
-right_title = " 喵铛 "
-topbar_title = " =^..^=  nyado "
-topbar_filter_prefix = "#"
-topbar_search_prefix = "/"
-topbar_date_format = "%H:%M  %a %d %b"
-statusbar_hint_wide = " n:新建  e:编辑  Spc:完成  p:固定  t:标签  d:删除  D:全部删除  /:搜索  1-9:筛选  M:截止  h:帮助  Esc:清除  q:退出  l:语言"
-statusbar_hint_medium = " n:新建  e:编辑  Spc:完成  d:删除  D:全部  /:搜索  h:帮助  q:退出  l"
-statusbar_hint_narrow = " n  e  Spc  d  D  /  h  q  l"
-progress_label = " {} 剩余 "
-column_header = "  [/] #标签        任务 "
+project_prefix = " ~ 项目"
+pending_prefix = " * 待办"
+done_prefix_stat = " x 完成"
+pinned_prefix = " ^ 固定"
+total_prefix = " # 总计"
+overdue_prefix = " ! 逾期"
 
-[pending]
-prefix = " * 待办 : "
-
-[done]
-prefix = " x 完成 : "
-
-[pinned]
-prefix = " ^ 固定 : "
-
-[total]
-prefix = " # 总计 : "
-
-[messages]
 task_added = "任务添加成功！ 喵～"
 task_updated = "任务已更新！ 喵～"
-done = "完成！干得好 :3"
-undone = "恢复待办～"
-pinned = "已固定！ *"
-unpinned = "已解除固定～"
+done_msg = "完成！干得好 :3"
+undone_msg = "恢复待办～"
+pinned_msg = "已固定！ *"
+unpinned_msg = "已解除固定～"
 tag_set = "标签已设置！"
 tag_cleared = "标签已清除"
 deleted = "已删除！噗～"
 all_deleted = "一片空白！全新开始 喵～"
 filters_cleared = "已清除筛选～"
-showing_all = "显示全部任务"
-filter_format = "筛选：#{}"
 all_done = "全部完成！！喵喵！！ =^..^="

@@ -47,8 +47,7 @@ pub fn create(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) 
         return;
     }
     let title = app.i18n.get("project_create_title");
-    let hint = app.i18n.get("popup_esc_hint");
-    if let Ok(Some(name)) = popup_with_mode(title, hint, "", PopupMode::Singleline, term) {
+    if let Ok(Some(name)) = popup_with_mode(title, "", PopupMode::Singleline, term) {
         if name.is_empty() || name.contains('.') || name.contains('/') || name.contains('\\') {
             let msg = app.i18n.get("project_invalid_name").to_string();
             app.set_message(&msg);
@@ -67,8 +66,7 @@ pub fn create(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>) 
 
 pub fn rename(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>, old: &str) {
     let title = app.i18n.get("project_rename_title");
-    let hint = app.i18n.get("popup_esc_hint");
-    if let Ok(Some(new)) = popup_with_mode(title, hint, old, PopupMode::Singleline, term) {
+    if let Ok(Some(new)) = popup_with_mode(title, old, PopupMode::Singleline, term) {
         if new.is_empty() || new.contains('.') || new.contains('/') || new.contains('\\') {
             let msg = app.i18n.get("project_invalid_name").to_string();
             app.set_message(&msg);
@@ -90,8 +88,7 @@ pub fn delete(app: &mut App, term: &mut Terminal<CrosstermBackend<io::Stdout>>, 
     }
     let template = app.i18n.get("popup_delete_project_confirm");
     let prompt = template.replace("{}", proj);
-    let hint = app.i18n.get("popup_esc_hint");
-    if let Ok(Some(ans)) = popup_with_mode(&prompt, hint, "", PopupMode::Singleline, term) {
+    if let Ok(Some(ans)) = popup_with_mode(&prompt, "", PopupMode::Singleline, term) {
         if ans == "y" || ans == "Y" {
             if app.storage.delete_project(proj) {
                 let msg = app.i18n.get("project_deleted").replace("{}", proj);

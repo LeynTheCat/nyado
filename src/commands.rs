@@ -11,9 +11,11 @@ pub enum Command {
     PageUp,
     PageDown,
     NewTask,
+    NewSubtask,
     EditTask,
     ToggleDone,
     TogglePin,
+    ToggleExpand,
     SetTag,
     DeleteTask,
     DeleteAll,
@@ -28,6 +30,22 @@ pub enum Command {
     None,
 }
 
+/// Maps a Rust `KeyCode` to a `Command` representation.
+///
+/// # Arguments
+///
+/// None
+///
+/// # Returns
+///
+/// A `Command` enum value representing the key's action.
+///
+/// # Examples
+///
+/// ```
+/// key_to_command(KeyCode::Char('q')).unwrap() == Command::Quit
+/// key_to_command(KeyCode::Char('l')).unwrap() == Command::Language
+/// ```
 pub fn key_to_command(key: KeyCode) -> Command {
     match key {
         KeyCode::Char('q') | KeyCode::Char('й') => Command::Quit,
@@ -39,9 +57,11 @@ pub fn key_to_command(key: KeyCode) -> Command {
         KeyCode::PageUp => Command::PageUp,
         KeyCode::PageDown => Command::PageDown,
         KeyCode::Char('n') | KeyCode::Char('т') => Command::NewTask,
+        KeyCode::Char('N') | KeyCode::Char('Т') => Command::NewSubtask,
         KeyCode::Char('e') | KeyCode::Char('у') => Command::EditTask,
         KeyCode::Char(' ') => Command::ToggleDone,
         KeyCode::Char('p') | KeyCode::Char('з') => Command::TogglePin,
+        KeyCode::Enter => Command::ToggleExpand,
         KeyCode::Char('t') | KeyCode::Char('е') => Command::SetTag,
         KeyCode::Char('d') | KeyCode::Char('в') => Command::DeleteTask,
         KeyCode::Char('D') | KeyCode::Char('В') => Command::DeleteAll,

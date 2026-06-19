@@ -7,6 +7,7 @@ mod storage;
 mod todo;
 mod ui;
 mod cli;
+mod config;
 
 use anyhow::Result;
 use single_instance::SingleInstance;
@@ -78,6 +79,7 @@ fn setup_panic_handler() {
 
 fn main() -> Result<()> {
     setup_panic_handler();
+    config::init_config();
 
     let args: Vec<String> = env::args().collect();
 

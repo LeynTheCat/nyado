@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-pub const CAT_ASCII: [&str; 16] = [
+pub const CAT_ASCII_BIG: [&str; 16] = [
     "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
     "⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣇⠀⠀⠀⠀⠀⠀⠀⠀⣼⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀",
     "⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀",
@@ -26,27 +26,51 @@ pub const CAT_ASCII: [&str; 16] = [
     "⠀⠀⠀⠀⠀⠀⠀⠀⠈  ⠀⠀⠀⠀⠀⠀⠀⠀⠀ ⠁ ⠀⠀⠀⠀⠀⠀⠀",
 ];
 
-pub const CAT_HEIGHT: usize = CAT_ASCII.len();
+pub const CAT_BIG_HEIGHT: usize = CAT_ASCII_BIG.len();
 
-pub fn draw_bongo(frame: &mut Frame, area: Rect) {
+pub const CAT_ASCII_SMALL: [&str; 11] = [
+    "⠀⠀  ⠀⠀⣠⠀⠀⠀⠀⠀ ⣄⠀⠀⠀⠀ ⠀",
+    "⠀⠀  ⢠⣾⣿⣇⠀⠀ ⠀⣼⣿⣷⡀⠀   ",
+    " ⠀ ⢀⣿⣿⣿⣿⡄⠀ ⢰⣿⣿⣿⣷⡀⠀⠀ ",
+    "   ⣾⣿⣿⣿⣿⣧  ⣾⣿⣿⣿⣿⣧⠀  ",
+    "  ⢸⣿⣿⣿⣿⣿⣿⣄⣠⣿⣿⣿⣿⣿⣿⡆⠀ ",
+    "  ⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀ ",
+    "  ⣿⡟⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢻⣿  ",
+    "  ⣿⡇⣿⣿⡿⣿⣿⣿⣿⣿⣿⣿⣿⡟⢸⣿  ",
+    "⠀ ⡸⢿⣮⣭⣴⣾⣿⣿⣿⣿⣷⣬⣥⣶⡿⢇⠀ ",
+    " ⠈ ⠔⠙⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠋⠢ ⠁⠀",
+    "                    ",
+];
+
+pub const CAT_SMALL_HEIGHT: usize = CAT_ASCII_SMALL.len();
+
+fn draw_bongo_generic(frame: &mut Frame, area: Rect, cat_lines: &[&str], cat_height: usize, centered: bool) {
     if area.width == 0 || area.height == 0 {
         return;
     }
-    let cat_width = CAT_ASCII.iter().map(|line| line.chars().count()).max().unwrap_or(20) as u16;
-    if area.width < cat_width || area.height < CAT_HEIGHT as u16 {
+    let cat_width = cat_lines
+        .iter()
+        .map(|line| line.chars().count())
+        .max()
+        .unwrap_or(20) as u16;
+    if area.width < cat_width || area.height < cat_height as u16 {
         return;
     }
-    let x = area.right().saturating_sub(cat_width + 1);
+    let x = if centered {
+        area.left() + (area.width - cat_width) / 2
+    } else {
+        area.right().saturating_sub(cat_width + 1)
+    };
     let mut y = area.top();
-    for line in CAT_ASCII.iter() {
+    for &line in cat_lines.iter() {
         let line_len = line.chars().count() as u16;
         if line_len == 0 || y >= area.bottom() - 1 {
             continue;
         }
         frame.render_widget(
             Paragraph::new(Line::from(Span::styled(
-                *line,
-                Style::default().fg(color::BONGO),
+                line,
+                Style::default().fg(color::bongo()),
             ))),
             Rect::new(x, y, line_len, 1),
         );
@@ -54,30 +78,231 @@ pub fn draw_bongo(frame: &mut Frame, area: Rect) {
     }
 }
 
+pub fn draw_bongo_big(frame: &mut Frame, area: Rect) {
+    draw_bongo_generic(frame, area, &CAT_ASCII_BIG, CAT_BIG_HEIGHT, false);
+}
+
+pub fn draw_bongo_small(frame: &mut Frame, area: Rect) {
+    draw_bongo_generic(frame, area, &CAT_ASCII_SMALL, CAT_SMALL_HEIGHT, true);
+}
+
 pub mod color {
     use ratatui::style::Color;
-    pub const BORDER: Color = Color::Cyan;
-    pub const TOPBAR_BG: Color = Color::Magenta;
-    pub const TOPBAR_FG: Color = Color::Black;
-    pub const SELECTED_BG: Color = Color::Cyan;
-    pub const SELECTED_FG: Color = Color::Black;
-    pub const DONE: Color = Color::White;
-    pub const PENDING: Color = Color::Yellow;
-    pub const BONGO: Color = Color::Magenta;
-    pub const STATUSBAR_BG: Color = Color::Blue;
-    pub const STATUSBAR_FG: Color = Color::Black;
-    pub const HEADER: Color = Color::Cyan;
-    pub const GREEN: Color = Color::Green;
-    pub const PIN: Color = Color::Red;
-    pub const TAG1: Color = Color::Green;
-    pub const TAG2: Color = Color::Yellow;
-    pub const TAG3: Color = Color::Cyan;
-    pub const TAG4: Color = Color::Magenta;
-    pub const TAG5: Color = Color::Red;
-    pub const TAG6: Color = Color::Blue;
-    pub const TAG7: Color = Color::White;
-    pub const TAG8: Color = Color::Green;
-    pub const SEARCH: Color = Color::Yellow;
+    use std::sync::OnceLock;
+
+    static TRUE_COLOR_SUPPORTED: OnceLock<bool> = OnceLock::new();
+    pub fn init_color_mode() {
+        let supported = std::env::var("COLORTERM")
+            .map(|v| v == "truecolor" || v == "24bit")
+            .unwrap_or(false)
+            || std::env::var("TERM")
+                .map(|v| v.contains("truecolor") || v.contains("24bit"))
+                .unwrap_or(false);
+
+        TRUE_COLOR_SUPPORTED.set(supported).ok();
+    }
+
+    fn true_color_supported() -> bool {
+        *TRUE_COLOR_SUPPORTED.get().unwrap_or(&false)
+    }
+
+    fn choose_rgb(rgb: Color, ansi: Color) -> Color {
+        if true_color_supported() {
+            rgb
+        } else {
+            ansi
+        }
+    }
+
+    pub fn cyan() -> Color {
+        choose_rgb(Color::Rgb(0x94, 0xe2, 0xd5), Color::Cyan)
+    }
+    pub fn magenta() -> Color {
+        choose_rgb(Color::Rgb(0xf5, 0xc2, 0xe7), Color::Magenta)
+    }
+    pub fn green() -> Color {
+        choose_rgb(Color::Rgb(0xa6, 0xe3, 0xa1), Color::Green)
+    }
+    pub fn yellow() -> Color {
+        choose_rgb(Color::Rgb(0xf9, 0xe2, 0xaf), Color::Yellow)
+    }
+    pub fn red() -> Color {
+        choose_rgb(Color::Rgb(0xf3, 0x8b, 0xa8), Color::Red)
+    }
+    pub fn blue() -> Color {
+        choose_rgb(Color::Rgb(0x89, 0xb4, 0xfa), Color::Blue)
+    }
+    pub fn black() -> Color {
+        choose_rgb(Color::Rgb(0x45, 0x47, 0x5a), Color::Black)
+    }
+    pub fn white() -> Color {
+        choose_rgb(Color::Rgb(0xba, 0xc2, 0xde), Color::White)
+    }
+
+    pub fn celebrate_color1() -> Color {
+        cyan()
+    }
+    pub fn celebrate_color2() -> Color {
+        magenta()
+    }
+    pub fn border() -> Color {
+        cyan()
+    }
+    pub fn topbar_bg() -> Color {
+        magenta()
+    }
+    pub fn topbar_fg() -> Color {
+        choose_rgb(Color::Rgb(0x1e, 0x1e, 0x2e), Color::Black)
+    }
+    pub fn selected_bg() -> Color {
+        cyan()
+    }
+    pub fn selected_fg() -> Color {
+        choose_rgb(Color::Rgb(0x1e, 0x1e, 0x2e), Color::Black)
+    }
+    pub fn done() -> Color {
+        white()
+    }
+    pub fn pending() -> Color {
+        yellow()
+    }
+    pub fn bongo() -> Color {
+        magenta()
+    }
+    pub fn statusbar_bg() -> Color {
+        blue()
+    }
+    pub fn statusbar_fg() -> Color {
+        black()
+    }
+    pub fn header() -> Color {
+        cyan()
+    }
+    pub fn search() -> Color {
+        yellow()
+    }
+    pub fn pin() -> Color {
+        red()
+    }
+    pub fn stats_done() -> Color {
+        green()
+    }
+    pub fn stats_pending() -> Color {
+        yellow()
+    }
+    pub fn stats_project() -> Color {
+        white()
+    }
+    pub fn stats_pinned() -> Color {
+        magenta()
+    }
+    pub fn stats_overdue() -> Color {
+        red()
+    }
+    pub fn tag1() -> Color {
+        green()
+    }
+    pub fn tag2() -> Color {
+        yellow()
+    }
+    pub fn tag3() -> Color {
+        cyan()
+    }
+    pub fn tag4() -> Color {
+        magenta()
+    }
+    pub fn tag5() -> Color {
+        red()
+    }
+    pub fn tag6() -> Color {
+        blue()
+    }
+    pub fn tag7() -> Color {
+        white()
+    }
+    pub fn tag8() -> Color {
+        choose_rgb(Color::Rgb(0xa6, 0xe3, 0xa1), Color::LightGreen)
+    }
+    pub fn tag9() -> Color {
+        choose_rgb(Color::Rgb(0xf9, 0xe2, 0xaf), Color::LightYellow)
+    }
+    pub fn tag10() -> Color {
+        choose_rgb(Color::Rgb(0x94, 0xe2, 0xd5), Color::LightCyan)
+    }
+    pub fn tag11() -> Color {
+        choose_rgb(Color::Rgb(0xf5, 0xc2, 0xe7), Color::LightMagenta)
+    }
+    pub fn tag12() -> Color {
+        choose_rgb(Color::Rgb(0xf3, 0x8b, 0xa8), Color::LightRed)
+    }
+    pub fn tag13() -> Color {
+        blue()
+    }
+
+    pub fn calendar_today_fg() -> Color {
+        choose_rgb(Color::Rgb(0x1e, 0x1e, 0x2e), Color::Black)
+    }
+    pub fn calendar_today_bg() -> Color {
+        green()
+    }
+    pub fn calendar_uncompleted_fg() -> Color {
+        choose_rgb(Color::Rgb(0x1e, 0x1e, 0x2e), Color::Black)
+    }
+    pub fn calendar_uncompleted_bg() -> Color {
+        red()
+    }
+    pub fn calendar_completed_fg() -> Color {
+        choose_rgb(Color::Rgb(0x1e, 0x1e, 0x2e), Color::Black)
+    }
+    pub fn calendar_completed_bg() -> Color {
+        magenta()
+    }
+    pub fn calendar_weekend_fg() -> Color {
+        choose_rgb(Color::Rgb(0x58, 0x5b, 0x70), Color::DarkGray)
+    }
+    pub fn calendar_weekend_bg() -> Color {
+        yellow()
+    }
+    pub fn calendar_normal_day() -> Color {
+        choose_rgb(Color::Rgb(0x94, 0xe2, 0xd5), Color::LightCyan)
+    }
+    pub fn calendar_weekday_header() -> Color {
+        choose_rgb(Color::Rgb(0x6c, 0x70, 0x86), Color::Gray)
+    }
+
+    pub fn due_overdue() -> Color {
+        red()
+    }
+    pub fn due_future() -> Color {
+        green()
+    }
+    pub fn pinned_marker() -> Color {
+        magenta()
+    }
+    pub fn popup_border() -> Color {
+        cyan()
+    }
+    pub fn popup_title() -> Color {
+        cyan()
+    }
+    pub fn popup_input_fg() -> Color {
+        yellow()
+    }
+    pub fn popup_selected_bg() -> Color {
+        cyan()
+    }
+    pub fn popup_selected_fg() -> Color {
+        choose_rgb(Color::Rgb(0x1e, 0x1e, 0x2e), Color::Black)
+    }
+    pub fn popup_current_project() -> Color {
+        green()
+    }
+    pub fn popup_normal_project() -> Color {
+        yellow()
+    }
+    pub fn popup_help_fg() -> Color {
+        choose_rgb(Color::Rgb(0x58, 0x5b, 0x70), Color::DarkGray)
+    }
 }
 
 pub fn tag_color(tag: &str) -> Color {
@@ -85,11 +310,12 @@ pub fn tag_color(tag: &str) -> Color {
     for ch in tag.chars() {
         h = h.wrapping_mul(31).wrapping_add(ch as u64);
     }
-    let colors = [
-        color::TAG1, color::TAG2, color::TAG3, color::TAG4,
-        color::TAG5, color::TAG6, color::TAG7, color::TAG8,
+    let colors: [fn() -> Color; 13] = [
+        color::tag1, color::tag2, color::tag3, color::tag4, color::tag5, color::tag6,
+        color::tag7, color::tag8, color::tag9, color::tag10, color::tag11, color::tag12,
+        color::tag13,
     ];
-    colors[(h % 8) as usize]
+    colors[(h % 13) as usize]()
 }
 
 pub fn truncate_text(text: &str, max_chars: usize) -> String {

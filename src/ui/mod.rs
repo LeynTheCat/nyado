@@ -1,4 +1,4 @@
-mod common;
+pub mod common;
 pub mod progress_bar;
 mod right_panel;
 mod search_box;
@@ -6,6 +6,7 @@ mod statusbar;
 mod todo_list;
 mod topbar;
 
+use crate::config::config;
 use crate::i18n::I18n;
 use crate::storage::Storage;
 use progress_bar::ProgressState;
@@ -21,7 +22,8 @@ use statusbar::draw_statusbar;
 use todo_list::draw_todo_list;
 use topbar::draw_topbar;
 
-fn draw_celebration(frame: &mut Frame, size: Rect, i18n: &I18n) {
+fn draw_celebration(frame: &mut Frame, size: Rect, i18n: &I18n, frame_counter: u8) {
+    let cfg = config();
     let lines = vec![
         i18n.get("celebration_line1"),
         i18n.get("celebration_line2"),
@@ -47,9 +49,15 @@ fn draw_celebration(frame: &mut Frame, size: Rect, i18n: &I18n) {
             text.push_str(line);
         }
     }
+    let blink_state = (frame_counter / cfg.celebration_blink_interval) % 2;
+    let color = if blink_state == 0 {
+        common::color::celebrate_color1()
+    } else {
+        common::color::celebrate_color2()
+    };
     let para = Paragraph::new(text)
         .alignment(Alignment::Center)
-        .style(Style::default().fg(common::color::GREEN).add_modifier(Modifier::BOLD));
+        .style(Style::default().fg(color).add_modifier(Modifier::BOLD));
     frame.render_widget(para, size);
 }
 
@@ -57,7 +65,7 @@ pub fn draw(
     frame: &mut Frame,
     size: Rect,
     storage: &Storage,
-    visible: &[usize],
+    visible: &[(u64, usize)],
     selected: usize,
     scroll_state: &mut usize,
     i18n: &I18n,
@@ -66,9 +74,11 @@ pub fn draw(
     progress_state: &mut ProgressState,
     search_mode: bool,
     search_buffer: &str,
+    list_area: &mut Option<Rect>,
+    line_to_task: &mut Vec<usize>,
 ) {
     if celebrate > 0 {
-        draw_celebration(frame, size, i18n);
+        draw_celebration(frame, size, i18n, celebrate);
         return;
     }
 
@@ -76,7 +86,7 @@ pub fn draw(
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(1), Constraint::Min(0), Constraint::Length(1)])
         .split(size);
-    draw_topbar(frame, chunks[0], storage, i18n);
+    draw_topbar(frame, chunks[0], i18n);
     draw_statusbar(frame, chunks[2], message, i18n);
 
     let main_area = chunks[1];
@@ -93,10 +103,10 @@ pub fn draw(
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Min(0), Constraint::Length(5)])
                 .split(main_area);
-            draw_todo_list(frame, left_chunks[0], storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer);
+            draw_todo_list(frame, left_chunks[0], storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer, list_area, line_to_task);
             draw_searchbox(frame, left_chunks[1], search_buffer);
         } else {
-            draw_todo_list(frame, main_area, storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer);
+            draw_todo_list(frame, main_area, storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer, list_area, line_to_task);
         }
     } else {
         let horiz = Layout::default()
@@ -108,10 +118,10 @@ pub fn draw(
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Min(0), Constraint::Length(5)])
                 .split(horiz[0]);
-            draw_todo_list(frame, left_chunks[0], storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer);
+            draw_todo_list(frame, left_chunks[0], storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer, list_area, line_to_task);
             draw_searchbox(frame, left_chunks[1], search_buffer);
         } else {
-            draw_todo_list(frame, horiz[0], storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer);
+            draw_todo_list(frame, horiz[0], storage, visible, selected, scroll_state, i18n, progress_state, search_mode, search_buffer, list_area, line_to_task);
         }
         draw_right_panel(frame, horiz[1], storage, visible, selected, i18n);
     }

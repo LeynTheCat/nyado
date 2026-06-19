@@ -5,10 +5,11 @@ use ratatui::{
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
-    Terminal,
+    Frame, Terminal,
 };
 use std::io;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+use crate::ui::common::color;
 
 pub enum PopupMode {
     Singleline,
@@ -61,7 +62,6 @@ fn split_line_by_width(line: &str, max_width: usize) -> Vec<String> {
     let mut result = Vec::new();
     let mut current = String::new();
     let mut current_width = 0;
-
     for ch in line.chars() {
         let ch_w = ch.width().unwrap_or(1);
         if current_width + ch_w > max_width && !current.is_empty() {
@@ -109,28 +109,42 @@ fn find_position_from_index(lines: &[String], mut index: usize) -> (usize, usize
     }
 }
 
+fn draw_common_hint(f: &mut Frame<'_>, inner: Rect, text: &str) {
+    let hint_text = format!("{} ", text);
+    let hint_width = visual_width(&hint_text);
+    if hint_width == 0 || inner.width < hint_width as u16 + 1 {
+        return;
+    }
+    let x = inner.left() + 1;
+    let y = inner.bottom().saturating_sub(1);
+    if y >= inner.top() && x + hint_width as u16 <= inner.right() {
+        let span = Span::styled(hint_text, Style::default().dim());
+        f.render_widget(Paragraph::new(span), Rect::new(x, y, hint_width as u16, 1));
+    }
+}
+
 fn popup_singleline(
     title: &str,
-    hint: &str,
     initial: &str,
+    hint_top: Option<&str>,
+    placeholder: Option<&str>,
     term: &mut Terminal<CrosstermBackend<io::Stdout>>,
     max_len: usize,
 ) -> io::Result<Option<String>> {
     let mut chars: Vec<char> = initial.chars().collect();
     let mut cursor_pos = chars.len();
     let mut scroll_offset: usize = 0;
-
+    let common_hint = " [ESC] [ENTER]";
     loop {
         let term_size = term.size()?;
         let popup_width = std::cmp::min(74, term_size.width.saturating_sub(4));
-        let popup_height = 7;
+        let popup_height = if hint_top.is_some() { 9 } else { 8 };
         if popup_width == 0 || term_size.height < popup_height + 2 {
             return Ok(None);
         }
         let popup_x = (term_size.width.saturating_sub(popup_width)) / 2;
         let popup_y = (term_size.height.saturating_sub(popup_height)) / 2;
         let popup_area = Rect::new(popup_x, popup_y, popup_width, popup_height);
-
         let input_line_width = (popup_width.saturating_sub(8)) as usize;
         let full_text: String = chars.iter().collect();
         let cursor_visual = visual_offset(&full_text, cursor_pos);
@@ -140,7 +154,6 @@ fn popup_singleline(
         if cursor_visual < scroll_offset {
             scroll_offset = cursor_visual;
         }
-
         let visible_text = if scroll_offset == 0 {
             full_text.clone()
         } else {
@@ -162,47 +175,59 @@ fn popup_singleline(
             display_text = truncate_by_width(&visible_text, input_line_width.saturating_sub(1));
             display_text.push('…');
         }
-
+        let show_placeholder = chars.is_empty() && placeholder.is_some();
+        let display_content = if show_placeholder {
+            placeholder.unwrap().to_string()
+        } else {
+            display_text.clone()
+        };
         term.draw(|f| {
             f.render_widget(Clear, popup_area);
             let block = Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
-                .title(Span::styled(title, Style::default().fg(Color::Cyan)));
+                .border_style(Style::default().fg(color::popup_border()))
+                .title(Span::styled(title, Style::default().fg(color::popup_title())));
             let inner = block.inner(popup_area);
             f.render_widget(block, popup_area);
-
-            if !hint.is_empty() && inner.height >= 1 {
+            let mut y_offset = 1;
+            if let Some(hint) = hint_top {
                 let hint_rect = Rect::new(
                     inner.left().saturating_add(2),
-                    inner.top().saturating_add(1),
+                    inner.top().saturating_add(y_offset),
                     inner.width.saturating_sub(4),
                     1,
                 );
                 if hint_rect.width > 0 && hint_rect.height > 0 {
                     f.render_widget(Paragraph::new(hint).style(Style::default().dim()), hint_rect);
                 }
+                y_offset += 1;
             }
-
             let input_area = Rect::new(
                 inner.left().saturating_add(2),
-                inner.top().saturating_add(3),
+                inner.top().saturating_add(y_offset + 1),
                 inner.width.saturating_sub(4),
                 1,
             );
             if input_area.width > 0 && input_area.height > 0 {
-                let display_span = Span::styled(format!("> {}", display_text), Style::default().fg(Color::Yellow));
-                f.render_widget(Paragraph::new(display_span), input_area);
+                let prompt_span = Span::styled("> ", Style::default().fg(color::popup_input_fg()));
+                if show_placeholder {
+                    let placeholder_span = Span::styled(display_content, Style::default().fg(Color::DarkGray).dim());
+                    let line = Line::from(vec![prompt_span, placeholder_span]);
+                    f.render_widget(Paragraph::new(line), input_area);
+                } else {
+                    let text_span = Span::styled(display_content, Style::default().fg(color::popup_input_fg()));
+                    let line = Line::from(vec![prompt_span, text_span]);
+                    f.render_widget(Paragraph::new(line), input_area);
+                }
             }
-
             let cursor_visual_rel = cursor_visual.saturating_sub(scroll_offset);
             let cursor_x = inner.left().saturating_add(2).saturating_add(2).saturating_add(cursor_visual_rel as u16);
-            let cursor_y = inner.top().saturating_add(3);
-            if cursor_visual_rel <= input_line_width && cursor_x < term_size.width && cursor_y < term_size.height {
+            let cursor_y = inner.top().saturating_add(y_offset + 1);
+            if !show_placeholder && cursor_visual_rel <= input_line_width && cursor_x < term_size.width && cursor_y < term_size.height {
                 f.set_cursor(cursor_x, cursor_y);
             }
+            draw_common_hint(f, inner, common_hint);
         })?;
-
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
                 continue;
@@ -242,8 +267,9 @@ fn popup_singleline(
 
 fn popup_multiline_editable(
     title: &str,
-    hint: &str,
     initial: &str,
+    hint_top: Option<&str>,
+    placeholder: Option<&str>,
     term: &mut Terminal<CrosstermBackend<io::Stdout>>,
     max_total_chars: usize,
     max_line_width: usize,
@@ -251,27 +277,24 @@ fn popup_multiline_editable(
     let mut flat: Vec<char> = initial.chars().collect();
     let mut abs_pos = flat.len();
     let mut scroll_offset: usize = 0;
-
+    let common_hint = " [ESC] [ENTER]";
     loop {
         let term_size = term.size()?;
         let popup_width = std::cmp::min(74, term_size.width.saturating_sub(4));
-        let popup_height = 12;
+        let popup_height = if hint_top.is_some() { 14 } else { 13 };
         if popup_width == 0 || term_size.height < popup_height + 2 {
             return Ok(None);
         }
         let popup_x = (term_size.width.saturating_sub(popup_width)) / 2;
         let popup_y = (term_size.height.saturating_sub(popup_height)) / 2;
-        let input_area_height = (popup_height - 7) as usize;
-
+        let input_area_height = (popup_height - if hint_top.is_some() { 8 } else { 7 }) as usize;
         let min_input_width = 20;
         let raw_input_width = (popup_width as i16 - 8).max(min_input_width);
         let visual_max_line_len = raw_input_width as usize;
         let effective_max_width = visual_max_line_len.min(max_line_width).max(1);
-
         let flat_str: String = flat.iter().collect();
         let lines = split_line_by_width(&flat_str, effective_max_width);
         let (cursor_y, cursor_x) = find_position_from_index(&lines, abs_pos);
-
         let mut scroll = scroll_offset;
         if cursor_y < scroll {
             scroll = cursor_y;
@@ -280,58 +303,86 @@ fn popup_multiline_editable(
             scroll = cursor_y.saturating_sub(input_area_height - 1);
         }
         scroll_offset = scroll;
-
+        let show_placeholder = flat.is_empty() && placeholder.is_some();
+        let display_lines: Vec<Line> = if show_placeholder {
+            let prompt_span = Span::styled("> ", Style::default().fg(color::popup_input_fg()));
+            let placeholder_span = Span::styled(placeholder.unwrap(), Style::default().fg(Color::DarkGray).dim());
+            vec![Line::from(vec![prompt_span, placeholder_span])]
+        } else {
+            lines
+                .iter()
+                .skip(scroll_offset)
+                .take(input_area_height)
+                .enumerate()
+                .map(|(idx, line)| {
+                    let mut display = line.clone();
+                    if visual_width(&display) > visual_max_line_len {
+                        display = truncate_by_width(&display, visual_max_line_len - 1);
+                        display.push('…');
+                    }
+                    if idx == 0 {
+                        let prompt_span = Span::styled("> ", Style::default().fg(color::popup_input_fg()));
+                        let text_span = Span::styled(display, Style::default().fg(color::popup_input_fg()));
+                        Line::from(vec![prompt_span, text_span])
+                    } else {
+                        let indent = "  ";
+                        let indent_span = Span::styled(indent, Style::default().fg(color::popup_input_fg()));
+                        let text_span = Span::styled(display, Style::default().fg(color::popup_input_fg()));
+                        Line::from(vec![indent_span, text_span])
+                    }
+                })
+                .collect()
+        };
         term.draw(|f| {
             let area = Rect::new(0, 0, term_size.width, term_size.height);
             f.render_widget(Clear, area);
             let popup_area = Rect::new(popup_x, popup_y, popup_width, popup_height);
             let block = Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
-                .title(Span::styled(title, Style::default().fg(Color::Cyan)));
+                .border_style(Style::default().fg(color::popup_border()))
+                .title(Span::styled(title, Style::default().fg(color::popup_title())));
             let inner = block.inner(popup_area);
             f.render_widget(block, popup_area);
-
-            if !hint.is_empty() && inner.height >= 1 {
-                f.render_widget(
-                    Paragraph::new(hint).style(Style::default().dim()),
-                    Rect::new(inner.left() + 2, inner.top() + 1, inner.width.saturating_sub(4), 1),
+            let mut y_offset = 1;
+            if let Some(hint) = hint_top {
+                let hint_rect = Rect::new(
+                    inner.left() + 2,
+                    inner.top() + y_offset,
+                    inner.width.saturating_sub(4),
+                    1,
                 );
+                if hint_rect.width > 0 && hint_rect.height > 0 {
+                    f.render_widget(Paragraph::new(hint).style(Style::default().dim()), hint_rect);
+                }
+                y_offset += 1;
             }
-
-            let input_area = Rect::new(inner.left() + 2, inner.top() + 3, inner.width.saturating_sub(4), inner.height.saturating_sub(5));
-            let display_lines: Vec<Line> = lines
-                .iter()
-                .skip(scroll_offset)
-                .take(input_area.height as usize)
-                .map(|line| {
-                    let mut display = line.clone();
-                    if visual_width(&display) > visual_max_line_len {
-                        display = truncate_by_width(&display, visual_max_line_len - 1);
-                        display.push('…');
-                    }
-                    Line::from(Span::styled(display, Style::default().fg(Color::Yellow)))
-                })
-                .collect();
+            let input_area = Rect::new(
+                inner.left() + 2,
+                inner.top() + y_offset + 1,
+                inner.width.saturating_sub(4),
+                inner.height.saturating_sub(y_offset + 3),
+            );
             let para = Paragraph::new(display_lines);
             f.render_widget(para, input_area);
-
-            let current_line = &lines[cursor_y];
-            let cursor_visual = visual_offset(current_line, cursor_x);
-            let visible_cursor_y = cursor_y.saturating_sub(scroll_offset);
-            if visible_cursor_y < input_area.height as usize && cursor_y < lines.len() {
-                let cursor_x_abs = inner.left() + 2 + (cursor_visual as u16).min(inner.width.saturating_sub(4));
-                let cursor_y_abs = input_area.top() + visible_cursor_y as u16;
-                if cursor_x_abs < term_size.width && cursor_y_abs < term_size.height {
-                    f.set_cursor(cursor_x_abs, cursor_y_abs);
+            if !show_placeholder && cursor_y < lines.len() {
+                let current_line = &lines[cursor_y];
+                let cursor_visual = visual_offset(current_line, cursor_x);
+                let visible_cursor_y = cursor_y.saturating_sub(scroll_offset);
+                if visible_cursor_y < input_area.height as usize {
+                    let prefix_offset = 2;
+                    let cursor_x_abs = inner.left() + 2 + (cursor_visual as u16) + prefix_offset;
+                    let cursor_y_abs = input_area.top() + visible_cursor_y as u16;
+                    if cursor_x_abs < term_size.width && cursor_y_abs < term_size.height {
+                        f.set_cursor(cursor_x_abs, cursor_y_abs);
+                    } else {
+                        f.set_cursor(inner.left() + 2, inner.top() + y_offset + 1);
+                    }
                 } else {
-                    f.set_cursor(inner.left() + 2, inner.top() + 3);
+                    f.set_cursor(inner.left() + 2, inner.top() + y_offset + 1);
                 }
-            } else {
-                f.set_cursor(inner.left() + 2, inner.top() + 3);
             }
+            draw_common_hint(f, inner, common_hint);
         })?;
-
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
                 continue;
@@ -418,8 +469,8 @@ fn popup_multiline_editable(
 
 fn popup_readonly(
     title: &str,
-    hint: &str,
     content: &str,
+    hint_top: Option<&str>,
     layout: PopupReadonlyLayout,
     term: &mut Terminal<CrosstermBackend<io::Stdout>>,
 ) -> io::Result<()> {
@@ -428,16 +479,12 @@ fn popup_readonly(
         return Ok(());
     }
     lines.push("");
-    let hint_lines: Vec<&str> = hint.lines().collect();
-    let hint_height = if hint.is_empty() { 0 } else { hint_lines.len() };
-    let bottom_padding = 1;
-
+    let bottom_padding = 2;
     let max_line_len = lines.iter().map(|l| visual_width(l)).max().unwrap_or(0);
-    let max_hint_len = hint_lines.iter().map(|l| visual_width(l)).max().unwrap_or(0);
-
+    let hint_height = if hint_top.is_some() { 1 } else { 0 };
     let (needed_width, needed_height) = match layout {
         PopupReadonlyLayout::SingleColumn => {
-            let width = max_line_len.max(max_hint_len) + 6;
+            let width = max_line_len + 6;
             let height = lines.len() + 4 + hint_height + bottom_padding;
             (width, height)
         }
@@ -451,7 +498,7 @@ fn popup_readonly(
             (width, height)
         }
     };
-
+    let common_hint = " [ESC] [ENTER]";
     loop {
         let term_size = term.size()?;
         let popup_width = std::cmp::min(needed_width as u16, term_size.width.saturating_sub(4));
@@ -462,35 +509,31 @@ fn popup_readonly(
         let popup_x = (term_size.width.saturating_sub(popup_width)) / 2;
         let popup_y = (term_size.height.saturating_sub(popup_height)) / 2;
         let popup_area = Rect::new(popup_x, popup_y, popup_width, popup_height);
-
         term.draw(|f| {
             f.render_widget(Clear, popup_area);
             let block = Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
-                .title(Span::styled(title, Style::default().fg(Color::Cyan)));
+                .border_style(Style::default().fg(color::popup_border()))
+                .title(Span::styled(title, Style::default().fg(color::popup_title())));
             let inner = block.inner(popup_area);
             f.render_widget(block, popup_area);
-
-            if !hint.is_empty() && inner.height > 0 {
+            let mut y_offset = 1;
+            if let Some(hint) = hint_top {
                 let hint_rect = Rect::new(
-                    inner.left().saturating_add(2),
-                    inner.top().saturating_add(1),
+                    inner.left() + 2,
+                    inner.top() + y_offset,
                     inner.width.saturating_sub(4),
-                    hint_height as u16,
+                    1,
                 );
                 if hint_rect.width > 0 && hint_rect.height > 0 {
                     f.render_widget(Paragraph::new(hint).style(Style::default().dim()), hint_rect);
                 }
+                y_offset += 1;
             }
-
-            let content_y = inner.top().saturating_add(2).saturating_add(hint_height as u16);
-            let content_height = inner.height
-                .saturating_sub(2)
-                .saturating_sub(hint_height as u16)
-                .saturating_sub(bottom_padding as u16);
+            let content_y = inner.top() + y_offset;
+            let content_height = inner.height - y_offset - bottom_padding as u16;
             let content_area = Rect::new(
-                inner.left().saturating_add(2),
+                inner.left() + 2,
                 content_y,
                 inner.width.saturating_sub(4),
                 content_height,
@@ -498,7 +541,6 @@ fn popup_readonly(
             if content_area.width == 0 || content_area.height == 0 {
                 return;
             }
-
             match layout {
                 PopupReadonlyLayout::SingleColumn => {
                     let display_lines: Vec<Line> = lines
@@ -511,7 +553,7 @@ fn popup_readonly(
                                 (*line).to_string()
                             }
                         })
-                        .map(|s| Line::from(Span::styled(s, Style::default().fg(Color::Yellow))))
+                        .map(|s| Line::from(Span::styled(s, Style::default().fg(color::popup_input_fg()))))
                         .collect();
                     let para = Paragraph::new(display_lines);
                     f.render_widget(para, content_area);
@@ -546,7 +588,7 @@ fn popup_readonly(
                                     (*line).to_string()
                                 }
                             })
-                            .map(|s| Line::from(Span::styled(s, Style::default().fg(Color::Yellow))))
+                            .map(|s| Line::from(Span::styled(s, Style::default().fg(color::popup_input_fg()))))
                             .collect::<Vec<Line>>(),
                     );
                     let right_para = Paragraph::new(
@@ -560,15 +602,15 @@ fn popup_readonly(
                                     (*line).to_string()
                                 }
                             })
-                            .map(|s| Line::from(Span::styled(s, Style::default().fg(Color::Yellow))))
+                            .map(|s| Line::from(Span::styled(s, Style::default().fg(color::popup_input_fg()))))
                             .collect::<Vec<Line>>(),
                     );
                     f.render_widget(left_para, cols[0]);
                     f.render_widget(right_para, cols[2]);
                 }
             }
+            draw_common_hint(f, inner, common_hint);
         })?;
-
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
                 match key.code {
@@ -580,29 +622,30 @@ fn popup_readonly(
     }
     Ok(())
 }
+
 pub fn popup_with_mode(
     title: &str,
-    hint: &str,
     initial: &str,
     mode: PopupMode,
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
 ) -> io::Result<Option<String>> {
-    popup_with_mode_layout(title, hint, initial, mode, terminal, PopupReadonlyLayout::SingleColumn)
+    popup_with_mode_layout(title, initial, mode, terminal, PopupReadonlyLayout::SingleColumn, None, None)
 }
 
 pub fn popup_with_mode_layout(
     title: &str,
-    hint: &str,
     initial: &str,
     mode: PopupMode,
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     readonly_layout: PopupReadonlyLayout,
+    hint_top: Option<&str>,
+    placeholder: Option<&str>,
 ) -> io::Result<Option<String>> {
     match mode {
-        PopupMode::Singleline => popup_singleline(title, hint, initial, terminal, 16),
-        PopupMode::Multiline => popup_multiline_editable(title, hint, initial, terminal, 256, 60),
+        PopupMode::Singleline => popup_singleline(title, initial, hint_top, placeholder, terminal, 16),
+        PopupMode::Multiline => popup_multiline_editable(title, initial, hint_top, placeholder, terminal, 256, 60),
         PopupMode::Readonly => {
-            popup_readonly(title, hint, initial, readonly_layout, terminal)?;
+            popup_readonly(title, initial, hint_top, readonly_layout, terminal)?;
             Ok(None)
         }
     }
@@ -626,22 +669,18 @@ pub fn popup_project_manager(
     if projects.is_empty() {
         return Ok(ProjectAction::None);
     }
-
     let mut selected = 0;
     let mut scroll_offset = 0;
     let cols = 2;
-
     let left_width = 40;
     let right_width = 24;
     let gap = 2;
     let right_fixed_height = 8;
-
     loop {
         let term_size = terminal.size()?;
         if term_size.height < 4 || term_size.width < 20 {
             return Ok(ProjectAction::None);
         }
-
         let rows = (projects.len() + cols - 1) / cols;
         let needed_height = (rows + 4) as u16;
         let left_height = std::cmp::min(needed_height, term_size.height.saturating_sub(4));
@@ -650,17 +689,14 @@ pub fn popup_project_manager(
         let popup_width = std::cmp::min(total_width, term_size.width.saturating_sub(4));
         let popup_x = (term_size.width.saturating_sub(popup_width)) / 2;
         let popup_y = (term_size.height.saturating_sub(total_height)) / 2;
-
         let left_area = Rect::new(popup_x, popup_y, left_width, left_height);
         let right_area = Rect::new(popup_x + left_width + gap, popup_y, right_width, right_fixed_height);
-
         let inner_width = left_width - 2;
         let col_width = (inner_width - 3) / cols as u16;
         let list_height = left_height.saturating_sub(2) as usize;
         if list_height == 0 {
             return Ok(ProjectAction::None);
         }
-
         let current_row = selected / cols;
         if current_row < scroll_offset {
             scroll_offset = current_row;
@@ -668,20 +704,17 @@ pub fn popup_project_manager(
         if current_row >= scroll_offset + list_height {
             scroll_offset = current_row.saturating_sub(list_height.saturating_sub(1));
         }
-
         terminal.draw(|f| {
             let left_block = Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
-                .title(Span::styled(title, Style::default().fg(Color::Cyan)));
+                .border_style(Style::default().fg(color::popup_border()))
+                .title(Span::styled(title, Style::default().fg(color::popup_title())));
             let inner_left = left_block.inner(left_area);
             f.render_widget(left_block, left_area);
-
             let top_padding = 1;
             let bottom_padding = 1;
             let list_start_y = inner_left.top().saturating_add(top_padding);
             let list_available_height = inner_left.height.saturating_sub(top_padding + bottom_padding);
-
             for row in 0..rows {
                 let y_offset = row as u16;
                 if y_offset >= list_available_height {
@@ -702,11 +735,11 @@ pub fn popup_project_manager(
                     let prefix = if idx == selected { "▶  " } else { "  " };
                     let line = format!("{}{}", prefix, display);
                     let style = if idx == selected {
-                        Style::default().bg(Color::Cyan).fg(Color::Black).add_modifier(Modifier::BOLD)
+                        Style::default().bg(color::popup_selected_bg()).fg(color::popup_selected_fg()).add_modifier(Modifier::BOLD)
                     } else if item == current {
-                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                        Style::default().fg(color::popup_current_project()).add_modifier(Modifier::BOLD)
                     } else {
-                        Style::default().fg(Color::Yellow)
+                        Style::default().fg(color::popup_normal_project())
                     };
                     let span = Span::styled(line, style);
                     let x = inner_left.left().saturating_add(2).saturating_add(col as u16 * (col_width + 2));
@@ -716,21 +749,19 @@ pub fn popup_project_manager(
                     }
                 }
             }
-
             let right_block = Block::default()
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan))
-                .title(Span::styled(help_title, Style::default().fg(Color::Cyan)));
+                .border_style(Style::default().fg(color::popup_border()))
+                .title(Span::styled(help_title, Style::default().fg(color::popup_title())));
             let inner_right = right_block.inner(right_area);
             f.render_widget(right_block, right_area);
-
             let help_lines = vec![
                 format!("{}: {}", hint_enter, help_switch),
                 format!("{}: {}", hint_c, help_create),
                 format!("{}: {}", hint_r, help_rename),
                 format!("{}: {}", hint_d, help_delete),
             ];
-            let help_style = Style::default().fg(Color::DarkGray).dim();
+            let help_style = Style::default().fg(color::popup_help_fg()).dim();
             let help_top_padding = 1;
             for (idx, line) in help_lines.iter().enumerate() {
                 let truncated = if visual_width(line) > inner_right.width as usize - 2 {
@@ -750,7 +781,6 @@ pub fn popup_project_manager(
                 }
             }
         })?;
-
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
                 continue;
